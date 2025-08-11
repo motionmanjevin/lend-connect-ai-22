@@ -3,7 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { MainLayout } from "./components/Layout/MainLayout";
+import Home from "./pages/Home";
+import Marketplace from "./pages/Marketplace";
+import Loans from "./pages/Loans";
+import Social from "./pages/Social";
+import Profile from "./pages/Profile";
+import RequestLoan from "./pages/RequestLoan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,8 +21,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+          <Route path="/marketplace" element={<MainLayout><Marketplace /></MainLayout>} />
+          <Route path="/loans" element={<MainLayout><Loans /></MainLayout>} />
+          <Route path="/social" element={<MainLayout><Social /></MainLayout>} />
+          <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
+          <Route path="/request-loan" element={<RequestLoan />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
