@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Bell, Plus, TrendingUp, DollarSign, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { DepositModal } from "@/components/DepositModal";
 import heroImage from "@/assets/hero-image.jpg";
 
 const quickActions = [
@@ -32,6 +34,8 @@ const recommendations = [
 ];
 
 export default function Home() {
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -74,7 +78,12 @@ export default function Home() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" size="sm" className="h-10">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-10"
+              onClick={() => setIsDepositModalOpen(true)}
+            >
               Deposit
             </Button>
             <Button variant="outline" size="sm" className="h-10">
@@ -156,6 +165,12 @@ export default function Home() {
             Diversify your lending portfolio across different risk levels to maximize returns while minimizing exposure.
           </p>
         </Card>
+
+        {/* Deposit Modal */}
+        <DepositModal 
+          open={isDepositModalOpen} 
+          onOpenChange={setIsDepositModalOpen} 
+        />
       </div>
     </div>
   );
