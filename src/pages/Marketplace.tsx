@@ -111,6 +111,7 @@ export default function Marketplace() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [sentOffers, setSentOffers] = useState<Set<number>>(new Set());
+  const [sentRequests, setSentRequests] = useState<Set<number>>(new Set());
   const [selectedListing, setSelectedListing] = useState<{ id: number; title: string } | null>(null);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
@@ -119,9 +120,20 @@ export default function Marketplace() {
     setIsVerificationModalOpen(true);
   };
 
+  const handleRequestLoan = (id: number, title: string) => {
+    setSelectedListing({ id, title });
+    setIsVerificationModalOpen(true);
+  };
+
   const handleOfferVerified = () => {
     if (selectedListing) {
       setSentOffers(prev => new Set([...prev, selectedListing.id]));
+    }
+  };
+
+  const handleRequestVerified = () => {
+    if (selectedListing) {
+      setSentRequests(prev => new Set([...prev, selectedListing.id]));
     }
   };
 
@@ -324,9 +336,22 @@ export default function Marketplace() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
-                    <Button className="btn-hero flex-1">
-                      <DollarSign className="w-4 h-4 mr-1" />
-                      Request Loan
+                    <Button 
+                      className={sentRequests.has(offer.id) ? "bg-success text-success-foreground hover:bg-success/90 flex-1" : "btn-hero flex-1"}
+                      onClick={() => handleRequestLoan(offer.id, offer.criteria)}
+                      disabled={sentRequests.has(offer.id)}
+                    >
+                      {sentRequests.has(offer.id) ? (
+                        <>
+                          <Check className="w-4 h-4 mr-1" />
+                          Sent Request
+                        </>
+                      ) : (
+                        <>
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          Request Loan
+                        </>
+                      )}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => navigate(`/user-profile/${offer.id}`)}>
                       View Profile
@@ -342,7 +367,7 @@ export default function Marketplace() {
       <VerificationModal
         isOpen={isVerificationModalOpen}
         onClose={() => setIsVerificationModalOpen(false)}
-        onVerified={handleOfferVerified}
+        onVerified={activeTab === "borrow" ? handleOfferVerified : handleRequestVerified}
         listingTitle={selectedListing?.title || ""}
       />
     </div>
