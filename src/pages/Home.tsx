@@ -1,13 +1,13 @@
-import { Bell, Plus, TrendingUp, DollarSign, Shield, Zap } from "lucide-react";
+import { Bell, CreditCard, TrendingUp, DollarSign, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import heroImage from "@/assets/hero-image.jpg";
 
 const quickActions = [
-  { icon: Plus, label: "Request Loan", path: "/request-loan", color: "accent" },
-  { icon: TrendingUp, label: "Fund Loan", path: "/marketplace", color: "secondary" },
+  { icon: CreditCard, label: "My Loans", path: "/loans", color: "accent" },
+  { icon: TrendingUp, label: "Browse Market", path: "/marketplace", color: "secondary" },
   { icon: DollarSign, label: "Repay Now", path: "/loans", color: "success" },
-  { icon: Shield, label: "Invite Friends", path: "/social", color: "info" },
+  { icon: Users, label: "Refer Friends", path: "/profile", color: "info" },
 ];
 
 const recommendations = [
