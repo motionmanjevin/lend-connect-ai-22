@@ -214,7 +214,7 @@ export default function UserProfile() {
         </Card>
 
         {/* Call-to-Action Bar */}
-        <div className="fixed bottom-20 left-0 right-0 p-4 bg-background border-t border-border">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
           <div className="flex gap-2">
             <Button className="btn-hero flex-1">
               <DollarSign className="w-4 h-4 mr-1" />
