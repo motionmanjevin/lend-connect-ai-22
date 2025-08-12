@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, Filter, Grid, List, Shield, DollarSign, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,7 @@ const sortOptions = [
 ];
 
 export default function Marketplace() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"borrow" | "lend">("borrow");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchQuery, setSearchQuery] = useState("");
@@ -248,7 +250,7 @@ export default function Marketplace() {
                       <DollarSign className="w-4 h-4 mr-1" />
                       Make Offer
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${request.id}`)}>
                       View Profile
                     </Button>
                   </div>
@@ -308,7 +310,7 @@ export default function Marketplace() {
                       <DollarSign className="w-4 h-4 mr-1" />
                       Request Loan
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${offer.id}`)}>
                       View Profile
                     </Button>
                   </div>
