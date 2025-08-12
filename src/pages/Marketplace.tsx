@@ -201,14 +201,9 @@ export default function Marketplace() {
         {activeTab === "borrow" ? (
           borrowRequests.map((request) => (
             <Card key={request.id} className="card-interactive p-4">
-              <div className="flex items-start gap-3">
-                {/* Avatar */}
-                <div className="w-12 h-12 bg-[var(--gradient-primary)] rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-semibold text-sm">{request.avatar}</span>
-                </div>
-
+              <div className="w-full">
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div className="w-full">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
@@ -261,14 +256,9 @@ export default function Marketplace() {
         ) : (
           lendOffers.map((offer) => (
             <Card key={offer.id} className="card-interactive p-4">
-              <div className="flex items-start gap-3">
-                {/* Avatar */}
-                <div className="w-12 h-12 bg-[var(--gradient-secondary)] rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-secondary-foreground font-semibold text-sm">{offer.avatar}</span>
-                </div>
-
+              <div className="w-full">
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div className="w-full">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
