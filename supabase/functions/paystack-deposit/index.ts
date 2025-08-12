@@ -25,12 +25,14 @@ serve(async (req) => {
       headers: {
         Authorization: `Bearer ${paystackSecretKey}`,
         'Content-Type': 'application/json',
+        'User-Agent': 'Supabase-Edge-Function/1.0',
       },
       body: JSON.stringify({
         amount: amount, // amount in pesewas
         email: email,
         currency: 'GHS',
         callback_url: callback_url,
+        channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money'], // Enable multiple payment channels
         metadata: {
           payment_method: payment_method,
           transaction_type: 'deposit'
@@ -39,8 +41,14 @@ serve(async (req) => {
     })
 
     const data = await response.json()
+    console.log('Paystack response:', { status: response.status, data })
 
     if (!response.ok) {
+      // Handle specific Paystack errors
+      if (data.message && data.message.includes('IP address')) {
+        console.error('Paystack IP restriction error:', data.message)
+        throw new Error('Payment service temporarily unavailable. Please try again later or contact support.')
+      }
       throw new Error(data.message || 'Failed to initialize transaction')
     }
 
