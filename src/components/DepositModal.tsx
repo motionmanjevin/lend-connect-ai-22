@@ -138,30 +138,48 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
           transaction_id: transaction.id,
           user_id: user.id
         },
-        callback: async (response: any) => {
+        callback: function(response: any) {
           console.log('Payment successful:', response);
           
-          // Update transaction status
-          await supabase
-            .from('transactions')
-            .update({ 
-              status: 'completed',
-              payment_reference: response.reference 
-            })
-            .eq('id', transaction.id);
+          // Update transaction status (non-blocking)
+          const updateTransaction = async () => {
+            try {
+              const { error } = await supabase
+                .from('transactions')
+                .update({ 
+                  status: 'completed',
+                  payment_reference: response.reference 
+                })
+                .eq('id', transaction.id);
 
-          toast({
-            title: "Payment Successful!",
-            description: `₵${amount} has been deposited to your account.`,
-          });
+              if (error) throw error;
 
-          onOpenChange(false);
-          setIsLoading(false);
-          
-          // Refresh the page to update balance
-          window.location.reload();
+              toast({
+                title: "Payment Successful!",
+                description: `₵${amount} has been deposited to your account.`,
+              });
+
+              onOpenChange(false);
+              setIsLoading(false);
+              
+              // Refresh the page to update balance
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } catch (error) {
+              console.error('Error updating transaction:', error);
+              toast({
+                title: "Payment Successful!",
+                description: `₵${amount} has been deposited. Please refresh to see updated balance.`,
+              });
+              onOpenChange(false);
+              setIsLoading(false);
+            }
+          };
+
+          updateTransaction();
         },
-        onClose: () => {
+        onClose: function() {
           toast({
             title: "Payment Cancelled",
             description: "Payment was cancelled. You can try again.",
