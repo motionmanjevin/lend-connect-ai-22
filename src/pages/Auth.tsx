@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/lend-me-logo.png";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -31,11 +31,11 @@ export default function Auth() {
         <div className="text-center mb-8">
           <img 
             src={logo} 
-            alt="LendFlow Logo" 
+            alt="Lend Me Logo" 
             className="w-20 h-20 mx-auto mb-4 rounded-xl shadow-lg"
           />
-          <h1 className="text-3xl font-bold text-foreground">LendFlow</h1>
-          <p className="text-muted-foreground mt-2">Your trusted lending platform</p>
+          <h1 className="text-3xl font-bold text-foreground">Lend Me</h1>
+          <p className="text-muted-foreground mt-2">Your trusted lending companion</p>
         </div>
 
         <Card className="shadow-xl border-border/50 bg-card/95 backdrop-blur-sm">
