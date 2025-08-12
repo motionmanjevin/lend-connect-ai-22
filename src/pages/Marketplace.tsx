@@ -250,7 +250,7 @@ export default function Marketplace() {
                       <DollarSign className="w-4 h-4 mr-1" />
                       Make Offer
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${request.id}`)}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/user-profile/${request.id}`)}>
                       View Profile
                     </Button>
                   </div>
@@ -310,7 +310,7 @@ export default function Marketplace() {
                       <DollarSign className="w-4 h-4 mr-1" />
                       Request Loan
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${offer.id}`)}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/user-profile/${offer.id}`)}>
                       View Profile
                     </Button>
                   </div>
