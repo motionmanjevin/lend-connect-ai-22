@@ -61,7 +61,7 @@ export default function UserProfile() {
         <div className="flex flex-col items-center text-center gap-4 mb-4">
           {/* Profile Picture */}
           <div className="relative">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white">
               <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
                 <span className="text-white/60 text-xs">No Photo</span>
               </div>
@@ -75,8 +75,8 @@ export default function UserProfile() {
 
           {/* Profile Info */}
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="font-heading font-bold text-xl">{userData.name}</h1>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <h1 className="font-heading font-bold text-xl text-black">{userData.name}</h1>
               <Badge className={`${
                 userData.tier === "Gold" ? "bg-secondary" : 
                 userData.tier === "Silver" ? "bg-muted" : "bg-accent"
@@ -84,10 +84,10 @@ export default function UserProfile() {
                 {userData.tier}
               </Badge>
             </div>
-            <p className="text-white/80 text-sm mb-1">{userData.tagline}</p>
+            <p className="text-black/80 text-sm mb-1">{userData.tagline}</p>
             
             {/* Location and Status */}
-            <div className="flex items-center gap-3 text-white/70 text-sm">
+            <div className="flex items-center justify-center gap-3 text-black/70 text-sm">
               <div className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
                 <span>{userData.location}</span>
@@ -102,11 +102,11 @@ export default function UserProfile() {
 
             {/* Contact Info */}
             <div className="mt-3 space-y-1">
-              <div className="flex items-center gap-2 text-white/80 text-sm">
+              <div className="flex items-center justify-center gap-2 text-black/80 text-sm">
                 <Phone className="w-4 h-4" />
                 <span>{userData.phone}</span>
               </div>
-              <div className="flex items-center gap-2 text-white/80 text-sm">
+              <div className="flex items-center justify-center gap-2 text-black/80 text-sm">
                 <Mail className="w-4 h-4" />
                 <span>{userData.email}</span>
               </div>
