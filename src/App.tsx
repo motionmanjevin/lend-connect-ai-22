@@ -12,6 +12,7 @@ import CreateListing from "./pages/CreateListing";
 import UserProfile from "./pages/UserProfile";
 import RequestLoan from "./pages/RequestLoan";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<MainLayout><Home /></MainLayout>} />
           <Route path="/marketplace" element={<MainLayout><Marketplace /></MainLayout>} />
           <Route path="/loans" element={<MainLayout><Loans /></MainLayout>} />
