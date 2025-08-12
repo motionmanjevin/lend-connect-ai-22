@@ -1,17 +1,13 @@
-import { ReactNode } from "react";
+import { Outlet } from "react-router-dom";
 import { BottomNavigation } from "./BottomNavigation";
 import { AIAssistant } from "../Features/AIAssistant";
 
-interface MainLayoutProps {
-  children: ReactNode;
-}
-
-export const MainLayout = ({ children }: MainLayoutProps) => {
+export const MainLayout = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Main Content */}
       <main className="pb-20">
-        {children}
+        <Outlet />
       </main>
 
       {/* Bottom Navigation */}

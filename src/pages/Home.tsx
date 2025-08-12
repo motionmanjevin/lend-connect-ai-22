@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Plus, TrendingUp, DollarSign, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DepositModal } from "@/components/DepositModal";
 import { WithdrawModal } from "@/components/WithdrawModal";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-image.jpg";
 
 const quickActions = [
@@ -16,7 +19,7 @@ const quickActions = [
 const recommendations = [
   {
     id: 1,
-    title: "Personal Loan - $5,000",
+    title: "Personal Loan - ₵5,000",
     rate: "8.5%",
     term: "24 months",
     borrower: "Sarah M.",
@@ -25,7 +28,7 @@ const recommendations = [
   },
   {
     id: 2,
-    title: "Business Loan - $15,000",
+    title: "Business Loan - ₵15,000",
     rate: "12.0%",
     term: "36 months",
     borrower: "Tech Startup Inc.",
@@ -37,6 +40,43 @@ const recommendations = [
 export default function Home() {
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (data) {
+      setProfile(data);
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,7 +94,7 @@ export default function Home() {
                   <span className="font-heading font-bold text-lg">JD</span>
                 </div>
                 <div>
-                  <h1 className="font-heading font-semibold text-lg">Good morning, John!</h1>
+                  <h1 className="font-heading font-semibold text-lg">Good morning, {profile?.full_name || 'User'}!</h1>
                   <p className="text-white/80 text-sm">Ready to lend or borrow today?</p>
                 </div>
               </div>
@@ -72,11 +112,11 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-muted-foreground text-sm">Total Balance</p>
-              <h2 className="font-heading font-bold text-2xl">$12,450.00</h2>
+              <h2 className="font-heading font-bold text-2xl">₵{profile?.account_balance?.toFixed(2) || '0.00'}</h2>
             </div>
             <div className="text-right">
               <p className="text-muted-foreground text-sm">This Month</p>
-              <p className="text-success font-semibold">+$340.50</p>
+              <p className="text-success font-semibold">+₵340.50</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

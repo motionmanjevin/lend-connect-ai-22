@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Smartphone, CreditCard, Building2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DepositModalProps {
   open: boolean;
@@ -53,10 +55,12 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
   const [cvv, setCvv] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [routingNumber, setRoutingNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleDeposit = () => {
-    if (!selectedMethod || !amount) {
+  const handleDeposit = async () => {
+    if (!selectedMethod || !amount || !user) {
       toast({
         title: "Missing Information",
         description: "Please select a payment method and enter an amount.",
@@ -65,51 +69,53 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
       return;
     }
 
-    // Validate specific payment method requirements
-    if (selectedMethod === "mobile" && (!mobileNumber || !provider)) {
+    setIsLoading(true);
+
+    try {
+      // Create transaction record
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          transaction_type: 'deposit',
+          amount: parseFloat(amount),
+          currency: 'GHS',
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      // Initiate Paystack payment
+      const response = await supabase.functions.invoke('paystack-deposit', {
+        body: {
+          amount: parseFloat(amount) * 100, // Paystack expects amount in pesewas
+          email: user.email,
+          payment_method: selectedMethod,
+          callback_url: `${window.location.origin}/home`
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      const { authorization_url } = response.data;
+      
       toast({
-        title: "Missing Mobile Details",
-        description: "Please enter your mobile number and select a provider.",
+        title: "Redirecting to Payment",
+        description: "You will be redirected to complete your payment.",
+      });
+
+      // Redirect to Paystack
+      window.location.href = authorization_url;
+
+    } catch (error: any) {
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Failed to initiate payment",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    if (selectedMethod === "card" && (!cardNumber || !expiryDate || !cvv)) {
-      toast({
-        title: "Missing Card Details",
-        description: "Please enter all card information.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (selectedMethod === "bank" && (!bankAccount || !routingNumber)) {
-      toast({
-        title: "Missing Bank Details",
-        description: "Please enter your bank account and routing number.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Simulate successful deposit
-    toast({
-      title: "Deposit Initiated",
-      description: `Your deposit of $${amount} has been initiated successfully.`,
-    });
-
-    // Reset form and close modal
-    setSelectedMethod(null);
-    setAmount("");
-    setMobileNumber("");
-    setProvider("");
-    setCardNumber("");
-    setExpiryDate("");
-    setCvv("");
-    setBankAccount("");
-    setRoutingNumber("");
-    onOpenChange(false);
   };
 
   const handleMethodSelect = (method: PaymentMethod) => {
@@ -128,7 +134,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₵</span>
               <Input
                 id="amount"
                 type="number"
@@ -286,8 +292,8 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
             <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={handleDeposit} className="flex-1">
-              Deposit ${amount || "0.00"}
+            <Button onClick={handleDeposit} disabled={isLoading} className="flex-1">
+              {isLoading ? "Processing..." : `Deposit ₵${amount || "0.00"}`}
             </Button>
           </div>
         </div>
