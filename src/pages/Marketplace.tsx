@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Grid, List, Shield, DollarSign, MapPin, Calendar, Check } from "lucide-react";
+import { Search, Filter, Grid, List, Shield, DollarSign, MapPin, Calendar, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -91,6 +91,51 @@ const lendOffers = [
   }
 ];
 
+const incomingRequests = [
+  {
+    id: 1,
+    requester: "John Doe",
+    avatar: "JD",
+    amount: 8000,
+    rate: 9.5,
+    term: 24,
+    purpose: "Business Equipment",
+    message: "I'd like to request funding for new equipment for my restaurant.",
+    location: "Accra, Ghana",
+    verified: true,
+    requestedDays: 1,
+    myListingTitle: "Business loans, verified income required"
+  },
+  {
+    id: 2,
+    requester: "Mary Johnson",
+    avatar: "MJ",
+    amount: 3500,
+    rate: 7.0,
+    term: 18,
+    purpose: "Education",
+    message: "Requesting funds to complete my master's degree program.",
+    location: "Kumasi, Ghana",
+    verified: true,
+    requestedDays: 2,
+    myListingTitle: "Education and personal development"
+  },
+  {
+    id: 3,
+    requester: "Tech Solutions Ltd",
+    avatar: "TS",
+    amount: 12000,
+    rate: 10.5,
+    term: 36,
+    purpose: "Business Expansion",
+    message: "Looking for funding to expand our software development team.",
+    location: "Tema, Ghana",
+    verified: false,
+    requestedDays: 3,
+    myListingTitle: "Business loans, verified income required"
+  }
+];
+
 const filterOptions = [
   { label: "All Amounts", value: "all" },
   { label: "GHC 1K - 5K", value: "1-5k" },
@@ -106,12 +151,14 @@ const sortOptions = [
 
 export default function Marketplace() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"borrow" | "lend">("borrow");
+  const [activeTab, setActiveTab] = useState<"borrow" | "lend" | "requests">("borrow");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [sentOffers, setSentOffers] = useState<Set<number>>(new Set());
   const [sentRequests, setSentRequests] = useState<Set<number>>(new Set());
+  const [acceptedRequests, setAcceptedRequests] = useState<Set<number>>(new Set());
+  const [declinedRequests, setDeclinedRequests] = useState<Set<number>>(new Set());
   const [selectedListing, setSelectedListing] = useState<{ id: number; title: string } | null>(null);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
@@ -137,6 +184,15 @@ export default function Marketplace() {
     }
   };
 
+  const handleAcceptRequest = (id: number) => {
+    setAcceptedRequests(prev => new Set([...prev, id]));
+    // In real app, this would trigger transaction process
+  };
+
+  const handleDeclineRequest = (id: number) => {
+    setDeclinedRequests(prev => new Set([...prev, id]));
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -158,6 +214,13 @@ export default function Marketplace() {
             className="flex-1"
           >
             Lender Offers
+          </Button>
+          <Button
+            variant={activeTab === "requests" ? "default" : "outline"}
+            onClick={() => setActiveTab("requests")}
+            className="flex-1"
+          >
+            Requests
           </Button>
         </div>
         
@@ -293,7 +356,7 @@ export default function Marketplace() {
               </div>
             </Card>
           ))
-        ) : (
+        ) : activeTab === "lend" ? (
           lendOffers.map((offer) => (
             <Card key={offer.id} className="card-interactive p-4">
               <div className="w-full">
@@ -357,6 +420,92 @@ export default function Marketplace() {
                       View Profile
                     </Button>
                   </div>
+                </div>
+              </div>
+            </Card>
+          ))
+        ) : (
+          incomingRequests.map((request) => (
+            <Card key={request.id} className="card-interactive p-4">
+              <div className="w-full">
+                {/* Content */}
+                <div className="w-full">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{request.requester}</h3>
+                        {request.verified && (
+                          <Shield className="w-4 h-4 text-success" />
+                        )}
+                      </div>
+                      <p className="text-muted-foreground text-sm">{request.purpose}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">{request.requestedDays} days ago</p>
+                    </div>
+                  </div>
+
+                  {/* For Listing Badge */}
+                  <Badge variant="outline" className="mb-3">
+                    For: {request.myListingTitle}
+                  </Badge>
+
+                  {/* Request Details */}
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <p className="text-2xl font-bold">GHC {request.amount.toLocaleString()}</p>
+                      <p className="text-muted-foreground text-sm">Requested Amount</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-primary">{request.rate}%</p>
+                      <p className="text-muted-foreground text-sm">{request.term} months</p>
+                    </div>
+                  </div>
+
+                  {/* Location and Message */}
+                  <div className="flex items-center gap-1 mb-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{request.location}</span>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground mb-4">{request.message}</p>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    {acceptedRequests.has(request.id) ? (
+                      <Button className="bg-success text-success-foreground hover:bg-success/90 flex-1" disabled>
+                        <Check className="w-4 h-4 mr-1" />
+                        Accepted - Processing Transfer
+                      </Button>
+                    ) : declinedRequests.has(request.id) ? (
+                      <Button variant="destructive" className="flex-1" disabled>
+                        <X className="w-4 h-4 mr-1" />
+                        Declined
+                      </Button>
+                    ) : (
+                      <>
+                        <Button 
+                          className="btn-hero flex-1"
+                          onClick={() => handleAcceptRequest(request.id)}
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Accept
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          className="flex-1"
+                          onClick={() => handleDeclineRequest(request.id)}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Decline
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  
+                  <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => navigate(`/user-profile/${request.id}`)}>
+                    View Profile
+                  </Button>
                 </div>
               </div>
             </Card>
