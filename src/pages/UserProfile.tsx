@@ -61,8 +61,8 @@ export default function UserProfile() {
         <div className="flex flex-col items-center text-center gap-4 mb-4">
           {/* Profile Picture */}
           <div className="relative">
-            <div className="w-20 h-20 bg-white/30 rounded-full flex items-center justify-center border-4 border-white">
-              <User className="w-10 h-10 text-white" />
+            <div className="w-20 h-20 bg-background/90 rounded-full flex items-center justify-center border-4 border-primary">
+              <User className="w-10 h-10 text-primary" />
             </div>
             {userData.verified && (
               <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-success rounded-full flex items-center justify-center border-2 border-white">
