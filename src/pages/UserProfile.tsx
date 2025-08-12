@@ -58,11 +58,13 @@ export default function UserProfile() {
 
       {/* Profile Header */}
       <div className="p-4 bg-[var(--gradient-hero)] text-white">
-        <div className="flex items-start gap-4 mb-4">
+        <div className="flex flex-col items-center text-center gap-4 mb-4">
           {/* Profile Picture */}
           <div className="relative">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="font-heading font-bold text-2xl">{userData.avatar}</span>
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
+              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
+                <span className="text-white/60 text-xs">No Photo</span>
+              </div>
             </div>
             {userData.verified && (
               <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-success rounded-full flex items-center justify-center border-2 border-white">
