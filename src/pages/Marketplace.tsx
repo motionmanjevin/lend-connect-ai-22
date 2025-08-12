@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Grid, List, Shield, DollarSign, MapPin, Calendar } from "lucide-react";
+import { Search, Filter, Grid, List, Shield, DollarSign, MapPin, Calendar, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import VerificationModal from "@/components/VerificationModal";
 
 const borrowRequests = [
   {
@@ -109,6 +110,20 @@ export default function Marketplace() {
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [sentOffers, setSentOffers] = useState<Set<number>>(new Set());
+  const [selectedListing, setSelectedListing] = useState<{ id: number; title: string } | null>(null);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+
+  const handleMakeOffer = (id: number, title: string) => {
+    setSelectedListing({ id, title });
+    setIsVerificationModalOpen(true);
+  };
+
+  const handleOfferVerified = () => {
+    if (selectedListing) {
+      setSentOffers(prev => new Set([...prev, selectedListing.id]));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -241,9 +256,22 @@ export default function Marketplace() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
-                    <Button className="btn-hero flex-1">
-                      <DollarSign className="w-4 h-4 mr-1" />
-                      Make Offer
+                    <Button 
+                      className={sentOffers.has(request.id) ? "bg-success text-success-foreground hover:bg-success/90 flex-1" : "btn-hero flex-1"}
+                      onClick={() => handleMakeOffer(request.id, request.purpose)}
+                      disabled={sentOffers.has(request.id)}
+                    >
+                      {sentOffers.has(request.id) ? (
+                        <>
+                          <Check className="w-4 h-4 mr-1" />
+                          Sent Offer
+                        </>
+                      ) : (
+                        <>
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          Make Offer
+                        </>
+                      )}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => navigate(`/user-profile/${request.id}`)}>
                       View Profile
@@ -310,6 +338,13 @@ export default function Marketplace() {
           ))
         )}
       </div>
+
+      <VerificationModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => setIsVerificationModalOpen(false)}
+        onVerified={handleOfferVerified}
+        listingTitle={selectedListing?.title || ""}
+      />
     </div>
   );
 }
