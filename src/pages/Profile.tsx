@@ -41,8 +41,13 @@ export default function Profile() {
       {/* Header */}
       <div className="p-4 bg-[var(--gradient-hero)] text-white">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-            <span className="font-heading font-bold text-xl">{profileData.avatar}</span>
+          <div className="relative">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="font-heading font-bold text-2xl">{profileData.avatar}</span>
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full flex items-center justify-center border-2 border-white">
+              <Shield className="w-3 h-3 text-white" />
+            </div>
           </div>
           <div className="flex-1">
             <h1 className="font-heading font-bold text-xl">{profileData.name}</h1>
@@ -76,11 +81,11 @@ export default function Profile() {
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-3">
           <Card className="card-elevated p-3 text-center">
-            <p className="text-lg font-bold text-success">${(profileData.totalLent / 1000).toFixed(0)}K</p>
+            <p className="text-lg font-bold text-success">GHC {(profileData.totalLent / 1000).toFixed(0)}K</p>
             <p className="text-muted-foreground text-xs">Total Lent</p>
           </Card>
           <Card className="card-elevated p-3 text-center">
-            <p className="text-lg font-bold text-accent">${(profileData.totalBorrowed / 1000).toFixed(1)}K</p>
+            <p className="text-lg font-bold text-accent">GHC {(profileData.totalBorrowed / 1000).toFixed(1)}K</p>
             <p className="text-muted-foreground text-xs">Total Borrowed</p>
           </Card>
           <Card className="card-elevated p-3 text-center">
