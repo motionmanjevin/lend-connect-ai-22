@@ -82,12 +82,25 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
       }
     };
 
-    // Get Paystack public key from environment or use test key
-    // In production, this should be your actual public key
-    setPaystackKey('pk_test_0de8cde73e1745b8c3da37ac6efb7ec913a84b1c'); // Replace with your actual public key
+    // Get Paystack public key from Supabase function
+    const getPaystackKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-paystack-key');
+        if (error) throw error;
+        setPaystackKey(data.public_key);
+      } catch (error) {
+        console.error('Error getting Paystack key:', error);
+        toast({
+          title: "Configuration Error",
+          description: "Unable to load payment configuration. Please try again.",
+          variant: "destructive"
+        });
+      }
+    };
 
     loadPaystack();
-  }, []);
+    getPaystackKey();
+  }, [toast]);
 
   const handleDeposit = async () => {
     if (!selectedMethod || !amount || !user || !paystackKey) {
