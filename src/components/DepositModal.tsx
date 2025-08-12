@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,17 @@ import { Smartphone, CreditCard, Building2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+
+// Load Paystack inline script
+declare global {
+  interface Window {
+    PaystackPop: {
+      setup: (options: any) => {
+        openIframe: () => void;
+      };
+    };
+  }
+}
 
 interface DepositModalProps {
   open: boolean;
@@ -56,11 +67,30 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
   const [bankAccount, setBankAccount] = useState("");
   const [routingNumber, setRoutingNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [paystackKey, setPaystackKey] = useState<string>("");
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Load Paystack script and get public key
+  useEffect(() => {
+    const loadPaystack = () => {
+      if (!document.querySelector('script[src*="paystack"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://js.paystack.co/v1/inline.js';
+        script.async = true;
+        document.head.appendChild(script);
+      }
+    };
+
+    // Get Paystack public key from environment or use test key
+    // In production, this should be your actual public key
+    setPaystackKey('pk_test_0de8cde73e1745b8c3da37ac6efb7ec913a84b1c'); // Replace with your actual public key
+
+    loadPaystack();
+  }, []);
+
   const handleDeposit = async () => {
-    if (!selectedMethod || !amount || !user) {
+    if (!selectedMethod || !amount || !user || !paystackKey) {
       toast({
         title: "Missing Information",
         description: "Please select a payment method and enter an amount.",
@@ -69,11 +99,20 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
       return;
     }
 
+    if (!window.PaystackPop) {
+      toast({
+        title: "Payment Service Loading",
+        description: "Please wait for payment service to load and try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Create transaction record
-      const { error } = await supabase
+      // Create transaction record first
+      const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
         .insert({
           user_id: user.id,
@@ -81,39 +120,67 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
           amount: parseFloat(amount),
           currency: 'GHS',
           status: 'pending'
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (transactionError) throw transactionError;
 
-      // Initiate Paystack payment
-      const response = await supabase.functions.invoke('paystack-deposit', {
-        body: {
-          amount: parseFloat(amount) * 100, // Paystack expects amount in pesewas
-          email: user.email,
+      // Configure Paystack popup
+      const paystack = window.PaystackPop.setup({
+        key: paystackKey,
+        email: user.email,
+        amount: parseFloat(amount) * 100, // Paystack expects amount in pesewas (kobo for Naira)
+        currency: 'GHS',
+        ref: `lend_me_${transaction.id}_${Date.now()}`,
+        metadata: {
           payment_method: selectedMethod,
-          callback_url: `${window.location.origin}/home`
+          transaction_id: transaction.id,
+          user_id: user.id
+        },
+        callback: async (response: any) => {
+          console.log('Payment successful:', response);
+          
+          // Update transaction status
+          await supabase
+            .from('transactions')
+            .update({ 
+              status: 'completed',
+              payment_reference: response.reference 
+            })
+            .eq('id', transaction.id);
+
+          toast({
+            title: "Payment Successful!",
+            description: `₵${amount} has been deposited to your account.`,
+          });
+
+          onOpenChange(false);
+          setIsLoading(false);
+          
+          // Refresh the page to update balance
+          window.location.reload();
+        },
+        onClose: () => {
+          toast({
+            title: "Payment Cancelled",
+            description: "Payment was cancelled. You can try again.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
         }
       });
 
-      if (response.error) throw response.error;
-
-      const { authorization_url } = response.data;
-      
-      toast({
-        title: "Redirecting to Payment",
-        description: "You will be redirected to complete your payment.",
-      });
-
-      // Redirect to Paystack
-      window.location.href = authorization_url;
+      // Open the payment popup
+      paystack.openIframe();
 
     } catch (error: any) {
+      console.error('Payment error:', error);
       toast({
         title: "Payment Failed",
         description: error.message || "Failed to initiate payment",
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };
