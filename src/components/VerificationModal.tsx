@@ -17,17 +17,15 @@ export default function VerificationModal({ isOpen, onClose, onVerified, listing
   const [step, setStep] = useState<"identity" | "success">("identity");
   const [isVerifying, setIsVerifying] = useState(false);
   const [formData, setFormData] = useState({
-    idNumber: "",
-    phoneNumber: "",
     pin: ""
   });
   const { toast } = useToast();
 
   const handleVerification = async () => {
-    if (!formData.idNumber || !formData.phoneNumber || !formData.pin) {
+    if (!formData.pin) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all verification fields.",
+        description: "Please enter your security PIN.",
         variant: "destructive"
       });
       return;
@@ -50,7 +48,7 @@ export default function VerificationModal({ isOpen, onClose, onVerified, listing
     onVerified();
     onClose();
     setStep("identity");
-    setFormData({ idNumber: "", phoneNumber: "", pin: "" });
+    setFormData({ pin: "" });
   };
 
   return (
@@ -71,26 +69,6 @@ export default function VerificationModal({ isOpen, onClose, onVerified, listing
 
             <div className="space-y-3">
               <div>
-                <Label htmlFor="idNumber">National ID Number</Label>
-                <Input
-                  id="idNumber"
-                  placeholder="Enter your national ID number"
-                  value={formData.idNumber}
-                  onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="phoneNumber">Phone Number</Label>
-                <Input
-                  id="phoneNumber"
-                  placeholder="Enter your phone number"
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="pin">Security PIN</Label>
                 <Input
                   id="pin"
@@ -99,6 +77,7 @@ export default function VerificationModal({ isOpen, onClose, onVerified, listing
                   maxLength={4}
                   value={formData.pin}
                   onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
+                  className="text-center text-lg tracking-widest"
                 />
               </div>
             </div>
