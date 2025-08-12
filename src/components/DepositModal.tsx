@@ -161,7 +161,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
                 .from('transactions')
                 .update({ 
                   status: 'completed',
-                  payment_reference: response.reference 
+                  paystack_reference: response.reference 
                 })
                 .eq('id', transaction.id);
 

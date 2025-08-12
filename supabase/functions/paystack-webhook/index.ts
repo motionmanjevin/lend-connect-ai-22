@@ -66,7 +66,7 @@ serve(async (req) => {
             status: 'completed',
             paystack_reference: reference
           })
-          .eq('user_id', profiles.user_id)
+          .eq('paystack_reference', reference)
           .eq('status', 'pending')
           .eq('transaction_type', 'deposit')
       }
