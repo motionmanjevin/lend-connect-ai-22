@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Smartphone, CreditCard, Building2, Check, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WithdrawModalProps {
   open: boolean;
@@ -52,13 +54,35 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
   const [bankAccount, setBankAccount] = useState("");
   const [routingNumber, setRoutingNumber] = useState("");
   const [bankName, setBankName] = useState("");
+  const [profile, setProfile] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Simulate available balance
-  const availableBalance = 12450.00;
+  const availableBalance = profile?.account_balance || 0;
 
-  const handleWithdraw = () => {
-    if (!selectedAccount || !amount) {
+  useEffect(() => {
+    if (user && open) {
+      fetchProfile();
+    }
+  }, [user, open]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (data) {
+      setProfile(data);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!selectedAccount || !amount || !user) {
       toast({
         title: "Missing Information",
         description: "Please select an account type and enter an amount.",
@@ -96,40 +120,58 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
       return;
     }
 
-    if (selectedAccount === "card" && !cardNumber) {
+    setIsLoading(true);
+
+    try {
+      // Create withdrawal transaction record
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          amount: withdrawAmount,
+          transaction_type: 'withdrawal',
+          status: 'pending'
+        });
+
+      if (transactionError) throw transactionError;
+
+      // Update user balance immediately (optimistic update)
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({ 
+          account_balance: availableBalance - withdrawAmount 
+        })
+        .eq('user_id', user.id);
+
+      if (balanceError) throw balanceError;
+
       toast({
-        title: "Missing Card Details",
-        description: "Please enter your debit card number.",
+        title: "Withdrawal Initiated",
+        description: `Your withdrawal of ₵${amount} has been initiated successfully. Funds will be transferred within 1-3 business days.`,
+      });
+
+      // Reset form and close modal
+      setSelectedAccount(null);
+      setAmount("");
+      setMobileNumber("");
+      setProvider("");
+      setCardNumber("");
+      setBankAccount("");
+      setRoutingNumber("");
+      setBankName("");
+      onOpenChange(false);
+      
+      // Refresh profile data
+      fetchProfile();
+    } catch (error: any) {
+      toast({
+        title: "Withdrawal Failed",
+        description: error.message || "Failed to process withdrawal. Please try again.",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    if (selectedAccount === "bank" && (!bankAccount || !routingNumber || !bankName)) {
-      toast({
-        title: "Missing Bank Details",
-        description: "Please enter all bank account information.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Simulate successful withdrawal
-    toast({
-      title: "Withdrawal Initiated",
-      description: `Your withdrawal of $${amount} has been initiated successfully. Funds will be transferred within 1-3 business days.`,
-    });
-
-    // Reset form and close modal
-    setSelectedAccount(null);
-    setAmount("");
-    setMobileNumber("");
-    setProvider("");
-    setCardNumber("");
-    setBankAccount("");
-    setRoutingNumber("");
-    setBankName("");
-    onOpenChange(false);
   };
 
   const handleAccountSelect = (account: AccountType) => {
@@ -148,7 +190,7 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Available Balance</span>
-              <span className="text-lg font-semibold text-primary">${availableBalance.toLocaleString()}</span>
+              <span className="text-lg font-semibold text-primary">₵{availableBalance.toFixed(2)}</span>
             </div>
           </div>
 
@@ -156,7 +198,7 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
           <div className="space-y-2">
             <Label htmlFor="amount">Withdrawal Amount</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₵</span>
               <Input
                 id="amount"
                 type="number"
@@ -316,9 +358,9 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
             <Button 
               onClick={handleWithdraw} 
               className="flex-1"
-              disabled={!amount || parseFloat(amount) > availableBalance}
+              disabled={!amount || parseFloat(amount) > availableBalance || isLoading}
             >
-              Withdraw ${amount || "0.00"}
+              {isLoading ? "Processing..." : `Withdraw ₵${amount || "0.00"}`}
             </Button>
           </div>
         </div>

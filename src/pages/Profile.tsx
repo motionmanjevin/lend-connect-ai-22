@@ -1,8 +1,12 @@
+import { useState, useEffect } from "react";
 import { Edit, Settings, Shield, CreditCard, Bell, HelpCircle, LogOut, Star, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const profileData = {
   name: "John Doe",
@@ -36,6 +40,43 @@ const preferences = [
 ];
 
 export default function Profile() {
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    } else {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (data) {
+      setProfile(data);
+    }
+    setLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -50,9 +91,9 @@ export default function Profile() {
             </div>
           </div>
           <div className="flex-1">
-            <h1 className="font-heading font-bold text-xl">{profileData.name}</h1>
-            <p className="text-white/80 text-sm">{profileData.email}</p>
-            <p className="text-white/80 text-xs">Member since {profileData.joinDate}</p>
+            <h1 className="font-heading font-bold text-xl">{profile?.full_name || 'User'}</h1>
+            <p className="text-white/80 text-sm">{profile?.email}</p>
+            <p className="text-white/80 text-xs">Member since {new Date(profile?.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
           </div>
           <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
             <Edit className="w-4 h-4" />
@@ -81,15 +122,15 @@ export default function Profile() {
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-3">
           <Card className="card-elevated p-3 text-center">
-            <p className="text-lg font-bold text-success">GHC {(profileData.totalLent / 1000).toFixed(0)}K</p>
-            <p className="text-muted-foreground text-xs">Total Lent</p>
+            <p className="text-lg font-bold text-success">₵{profile?.account_balance?.toFixed(2) || '0.00'}</p>
+            <p className="text-muted-foreground text-xs">Balance</p>
           </Card>
           <Card className="card-elevated p-3 text-center">
-            <p className="text-lg font-bold text-accent">GHC {(profileData.totalBorrowed / 1000).toFixed(1)}K</p>
+            <p className="text-lg font-bold text-accent">₵0.00</p>
             <p className="text-muted-foreground text-xs">Total Borrowed</p>
           </Card>
           <Card className="card-elevated p-3 text-center">
-            <p className="text-lg font-bold text-primary">{profileData.activeLoans}</p>
+            <p className="text-lg font-bold text-primary">0</p>
             <p className="text-muted-foreground text-xs">Active Loans</p>
           </Card>
         </div>
@@ -178,7 +219,11 @@ export default function Profile() {
             <HelpCircle className="w-4 h-4 mr-3" />
             Help & Support
           </Button>
-          <Button variant="outline" className="w-full justify-start h-12 text-destructive hover:text-destructive">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start h-12 text-destructive hover:text-destructive"
+            onClick={handleSignOut}
+          >
             <LogOut className="w-4 h-4 mr-3" />
             Sign Out
           </Button>
