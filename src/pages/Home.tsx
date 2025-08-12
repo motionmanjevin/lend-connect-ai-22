@@ -3,6 +3,7 @@ import { Bell, Plus, TrendingUp, DollarSign, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DepositModal } from "@/components/DepositModal";
+import { WithdrawModal } from "@/components/WithdrawModal";
 import heroImage from "@/assets/hero-image.jpg";
 
 const quickActions = [
@@ -35,6 +36,7 @@ const recommendations = [
 
 export default function Home() {
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,7 +88,12 @@ export default function Home() {
             >
               Deposit
             </Button>
-            <Button variant="outline" size="sm" className="h-10">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-10"
+              onClick={() => setIsWithdrawModalOpen(true)}
+            >
               Withdraw
             </Button>
           </div>
@@ -170,6 +177,12 @@ export default function Home() {
         <DepositModal 
           open={isDepositModalOpen} 
           onOpenChange={setIsDepositModalOpen} 
+        />
+
+        {/* Withdraw Modal */}
+        <WithdrawModal 
+          open={isWithdrawModalOpen} 
+          onOpenChange={setIsWithdrawModalOpen} 
         />
       </div>
     </div>
