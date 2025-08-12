@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Star, MapPin, Calendar, Phone, Mail, MessageCircle, Bookmark, DollarSign } from "lucide-react";
+import { ArrowLeft, Shield, Star, MapPin, Calendar, Phone, Mail, MessageCircle, Bookmark, DollarSign, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,10 +61,8 @@ export default function UserProfile() {
         <div className="flex flex-col items-center text-center gap-4 mb-4">
           {/* Profile Picture */}
           <div className="relative">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white">
-              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
-                <span className="text-white/60 text-xs">No Photo</span>
-              </div>
+            <div className="w-20 h-20 bg-white/30 rounded-full flex items-center justify-center border-4 border-white">
+              <User className="w-10 h-10 text-white" />
             </div>
             {userData.verified && (
               <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-success rounded-full flex items-center justify-center border-2 border-white">
