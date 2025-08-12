@@ -115,7 +115,7 @@ export default function UserProfile() {
         </div>
       </div>
 
-      <div className="p-4 space-y-4 -mt-4 relative z-10">
+      <div className="p-4 space-y-4 -mt-4 relative z-10 pb-24">
         {/* Quick Stats Panel */}
         <Card className="card-elevated p-4">
           <h3 className="font-heading font-semibold mb-3">Quick Stats</h3>
