@@ -21,6 +21,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          payment_methods: Json | null
           paystack_customer_code: string | null
           phone_number: string | null
           updated_at: string
@@ -32,6 +33,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          payment_methods?: Json | null
           paystack_customer_code?: string | null
           phone_number?: string | null
           updated_at?: string
@@ -43,6 +45,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          payment_methods?: Json | null
           paystack_customer_code?: string | null
           phone_number?: string | null
           updated_at?: string

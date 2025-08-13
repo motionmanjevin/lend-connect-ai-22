@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import EditProfileModal from "@/components/EditProfileModal";
 
 const profileData = {
   name: "John Doe",
@@ -42,6 +43,7 @@ const preferences = [
 export default function Profile() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -149,7 +151,12 @@ export default function Profile() {
               Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Dec 2023'}
             </p>
           </div>
-          <Button variant="ghost" size="sm" className="text-foreground hover:bg-foreground/20">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-foreground hover:bg-foreground/20"
+            onClick={() => setEditModalOpen(true)}
+          >
             <Edit className="w-4 h-4" />
           </Button>
         </div>
@@ -198,29 +205,39 @@ export default function Profile() {
               <CreditCard className="w-5 h-5 text-primary" />
               <h3 className="font-heading font-semibold">Payment Methods</h3>
             </div>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setEditModalOpen(true)}
+            >
               Add New
             </Button>
           </div>
           <div className="space-y-3">
-            {paymentMethods.map((method, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{method.icon}</span>
-                  <div>
-                    <p className="font-medium text-sm">{method.type}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {"last4" in method ? `****${method.last4}` : method.email}
-                    </p>
+            {(profile?.payment_methods && profile.payment_methods.length > 0) ? (
+              profile.payment_methods.map((method: any, index: number) => (
+                <div key={method.id || index} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{method.icon}</span>
+                    <div>
+                      <p className="font-medium text-sm">{method.type}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {"last4" in method && method.last4 ? `****${method.last4}` : method.email}
+                      </p>
+                    </div>
                   </div>
+                  {method.primary && (
+                    <Badge variant="outline" className="text-xs">
+                      Primary
+                    </Badge>
+                  )}
                 </div>
-                {method.primary && (
-                  <Badge variant="outline" className="text-xs">
-                    Primary
-                  </Badge>
-                )}
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-muted-foreground text-sm text-center py-4">
+                No payment methods added yet. Click "Add New" to get started.
+              </p>
+            )}
           </div>
         </Card>
 
@@ -267,6 +284,13 @@ export default function Profile() {
           </Button>
         </div>
       </div>
+
+      <EditProfileModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        profile={profile}
+        onUpdate={fetchProfile}
+      />
     </div>
   );
 }
