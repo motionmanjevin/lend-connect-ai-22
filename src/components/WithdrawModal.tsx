@@ -165,19 +165,21 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
         description: `₵${amount} has been withdrawn from your account. Funds will be transferred within 1-3 business days.`,
       });
 
-      // Close modal immediately
-      onOpenChange(false);
+      // Close modal and reset loading immediately for responsiveness
       setIsLoading(false);
+      onOpenChange(false);
 
-      // Reset form
-      setSelectedAccount(null);
-      setAmount("");
-      setMobileNumber("");
-      setProvider("");
-      setCardNumber("");
-      setBankAccount("");
-      setRoutingNumber("");
-      setBankName("");
+      // Reset form after modal closes
+      setTimeout(() => {
+        setSelectedAccount(null);
+        setAmount("");
+        setMobileNumber("");
+        setProvider("");
+        setCardNumber("");
+        setBankAccount("");
+        setRoutingNumber("");
+        setBankName("");
+      }, 100);
       
       // Trigger a custom event to notify parent components
       window.dispatchEvent(new CustomEvent('balanceUpdate'));
@@ -200,7 +202,7 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md pointer-events-auto">
         <DialogHeader>
           <DialogTitle className="text-center">Withdraw Funds</DialogTitle>
         </DialogHeader>
