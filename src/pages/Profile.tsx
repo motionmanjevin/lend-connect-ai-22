@@ -81,7 +81,7 @@ export default function Profile() {
   const adjustBalance = async (amount: number) => {
     if (!user || !profile) return;
     
-    const currentBalance = profile.account_balance || 0;
+    const currentBalance = Number(profile.account_balance) || 0;
     const newBalance = currentBalance + amount;
     
     // Prevent negative balance
@@ -91,14 +91,22 @@ export default function Profile() {
     }
     
     try {
-      const { error } = await supabase
+      console.log('Updating balance for user:', user.id, 'from', currentBalance, 'to', newBalance);
+      
+      const { data, error } = await supabase
         .from('profiles')
         .update({ 
           account_balance: newBalance 
         })
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Database update error:', error);
+        throw error;
+      }
+      
+      console.log('Update successful, data returned:', data);
       
       // Refresh profile data
       await fetchProfile();
@@ -108,6 +116,7 @@ export default function Profile() {
       
       alert(`Balance ${amount > 0 ? 'increased' : 'decreased'} by ₵${Math.abs(amount)}`);
     } catch (error: any) {
+      console.error('Error adjusting balance:', error);
       alert(`Error adjusting balance: ${error.message}`);
     }
   };
