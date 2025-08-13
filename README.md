@@ -1,8 +1,4 @@
 # LendMe - Peer-to-Peer Lending Platform
-
-A modern, secure peer-to-peer lending platform built with React, TypeScript, and Supabase. LendMe connects borrowers and lenders in Ghana, providing a seamless experience for loan requests, funding, and management.
-
-
 ### Core Functionality
 - **User Authentication & Profiles** - Secure user registration and profile management
 - **Loan Marketplace** - Browse and create loan requests and lending offers
@@ -18,7 +14,7 @@ A modern, secure peer-to-peer lending platform built with React, TypeScript, and
 - **User Verification** - Trust and safety features for platform security
 - **Multi-payment Channels** - Support for cards, bank transfers, USSD, and mobile money
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React 18** - Modern React with hooks and functional components
@@ -36,13 +32,16 @@ A modern, secure peer-to-peer lending platform built with React, TypeScript, and
 - **PostgreSQL** - Primary database
 - **Paystack** - Payment processing and gateway
 - **Edge Functions** - Serverless functions for payment processing
+- **FastAPI**: High-performance API framework
+- **Python 3.9+**: Core programming language
+- **Uvicorn**: ASGI server for production
 
 ### Development Tools
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
 - **SWC** - Fast TypeScript/JavaScript compiler
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 lendme-frontend/
@@ -62,72 +61,6 @@ lendme-frontend/
 │   └── migrations/         # Database migrations
 └── public/                 # Public assets
 ```
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+ 
-- npm, yarn, or bun
-- Supabase account
-- Paystack account (for payments)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd lendme-frontend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   # or
-   bun install
-   ```
-
-3. **Environment Setup**
-   Create a `.env.local` file in the root directory:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   VITE_PAYSTACK_PUBLIC_KEY=your_paystack_public_key
-   ```
-
-4. **Database Setup**
-   ```bash
-   # Install Supabase CLI
-   npm install -g supabase
-   
-   # Link to your Supabase project
-   supabase link --project-ref your_project_ref
-   
-   # Run migrations
-   supabase db push
-   ```
-
-5. **Start Development Server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   # or
-   bun dev
-   ```
-
-The application will be available at `http://localhost:8080`
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run build:dev` - Build for development
-- `npm run lint` - Run ESLint
-- `npm run preview` - Preview production build
-
-##  Database Schema
 
 ### Core Tables
 
@@ -162,12 +95,7 @@ The application uses Supabase Auth with the following features:
 - Webhook handling for payment confirmations
 - Ghana Cedi (GHS) currency support
 
-### Payment Flow
-1. User initiates deposit/withdrawal
-2. Paystack transaction initialization
-3. User completes payment via Paystack
-4. Webhook confirms transaction
-5. Account balance updated
+
 
 ##  UI/UX Features
 
@@ -184,79 +112,278 @@ The application uses Supabase Auth with the following features:
 - **Form Components** - Validation and error handling
 - **Modal System** - Consistent dialog management
 
-## 🔧 Configuration
 
-### Vite Configuration
-- Path aliases (`@/` for `src/`)
-- React SWC plugin for fast compilation
-- Development server on port 8080
+## AI Engine Architecture Overview
 
-### Tailwind Configuration
-- Custom color scheme
-- Component-specific utilities
-- Animation classes
-- Responsive breakpoints
+### Core AI Components
 
-##  Deployment
-
-### Build for Production
-```bash
-npm run build
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    AI ENGINE ARCHITECTURE                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌──────────────┐ │
+│  │   DATA LAYER    │    │   ML LAYER      │    │  API LAYER   │ │
+│  │                 │    │                 │    │              │ │
+│  │ • User Profiles │    │ • Trust Score   │    │ • REST APIs  │ │
+│  │ • Payment Hist. │    │   Model         │    │ • Real-time  │ │
+│  │ • Credit Data   │    │ • Feature Eng.  │    │   Scoring    │ │
+│  │ • Behavioral    │    │ • Risk Models   │    │ • Matching   │ │
+│  │   Patterns      │    │ • Predictions   │    │ • Analytics  │ │
+│  └─────────────────┘    └─────────────────┘    └──────────────┘ │
+│           │                       │                      │      │
+│           └───────────────────────┼──────────────────────┘      │
+│                                   │                             │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                    AI PROCESSING PIPELINE                   │ │
+│  │                                                             │ │
+│  │  1. Data Ingestion → 2. Feature Engineering → 3. ML Model  │ │
+│  │  4. Trust Scoring → 5. Lender Matching → 6. API Response   │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Deploy Options
-- **Vercel** - Recommended for React apps
-- **Netlify** - Static site hosting
-- **Supabase Edge Functions** - Backend functions
-- **Custom Server** - Any Node.js hosting
+### AI Model Architecture
 
-### Environment Variables for Production
-```env
-VITE_SUPABASE_URL=your_production_supabase_url
-VITE_SUPABASE_ANON_KEY=your_production_supabase_anon_key
-VITE_PAYSTACK_PUBLIC_KEY=your_production_paystack_key
+#### 1. Trust Score Model (Gradient Boosting Regressor)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                TRUST SCORE MODEL ARCHITECTURE               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Input Features (12 dimensions):                            │
+│  ├── Payment History Score (0-1)                           │
+│  ├── Credit Utilization Ratio (0-1)                        │
+│  ├── Debt-to-Income Ratio (0-1)                            │
+│  ├── Income Stability Score (0-1)                          │
+│  ├── Employment Duration (0-1)                             │
+│  ├── Payment Frequency (payments/month)                    │
+│  ├── Late Payment Ratio (0-1)                              │
+│  ├── Missed Payment Ratio (0-1)                            │
+│  ├── Average Payment Amount                                │
+│  ├── Credit Score Normalized (0-1)                         │
+│  ├── Age (years)                                           │
+│  └── Income Log (log-transformed)                          │
+│                                                             │
+│  Model: GradientBoostingRegressor                          │
+│  ├── n_estimators: 100                                     │
+│  ├── learning_rate: 0.1                                    │
+│  ├── max_depth: 6                                          │
+│  └── random_state: 42                                      │
+│                                                             │
+│  Output: Trust Score (0-1000)                              │
+│  └── Trust Level: excellent/good/fair/poor/very_poor       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-##  Contributing
+#### 2. Feature Engineering Pipeline
+```
+┌─────────────────────────────────────────────────────────────┐
+│              FEATURE ENGINEERING PIPELINE                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Raw Data → Feature Extraction → Normalization → Model      │
+│                                                             │
+│  1. Payment Behavior Analysis:                             │
+│     ├── On-time payment ratio                              │
+│     ├── Late payment frequency                             │
+│     ├── Payment consistency score                          │
+│     └── Payment amount patterns                            │
+│                                                             │
+│  2. Financial Health Metrics:                              │
+│     ├── Credit utilization calculation                     │
+│     ├── Debt-to-income ratio                               │
+│     ├── Income stability assessment                        │
+│     └── Credit score normalization                         │
+│                                                             │
+│  3. Behavioral Patterns:                                   │
+│     ├── Payment frequency analysis                         │
+│     ├── Seasonal payment patterns                          │
+│     ├── Loan type preferences                              │
+│     └── Risk tolerance indicators                          │
+└─────────────────────────────────────────────────────────────┘
+```
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+#### 3. Lender Matching Algorithm
+```
+┌─────────────────────────────────────────────────────────────┐
+│              LENDER MATCHING ALGORITHM                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Match Score = w1*Trust_Score + w2*Amount_Fit +            │
+│                w3*Type_Compatibility + w4*Term_Fit         │
+│                                                             │
+│  Weights:                                                   │
+│  ├── Trust Score Compatibility (40%)                       │
+│  ├── Loan Amount Fit (25%)                                 │
+│  ├── Loan Type Match (20%)                                 │
+│  └── Term Compatibility (15%)                              │
+│                                                             │
+│  Interest Rate Calculation:                                │
+│  ├── Base Rate (lender range)                              │
+│  ├── Trust Score Multiplier (0.8-1.2)                     │
+│  ├── Amount Multiplier (0.95-1.0)                          │
+│  └── Term Multiplier (0.95-1.05)                           │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### Development Guidelines
-- Follow TypeScript best practices
-- Use ESLint for code quality
-- Write meaningful commit messages
-- Test thoroughly before submitting PRs
+### AI Processing Flow
 
-##  License
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    AI PROCESSING FLOW                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. USER DATA INGESTION                                    │
+│     ├── Profile information                                │
+│     ├── Payment history                                    │
+│     ├── Credit data                                        │
+│     └── Employment details                                 │
+│                                                             │
+│  2. FEATURE ENGINEERING                                    │
+│     ├── Payment behavior analysis                          │
+│     ├── Financial health metrics                           │
+│     ├── Risk indicators                                    │
+│     └── Behavioral patterns                                │
+│                                                             │
+│  3. ML MODEL PREDICTION                                    │
+│     ├── Trust score calculation                            │
+│     ├── Risk assessment                                    │
+│     ├── Confidence scoring                                 │
+│     └── Feature importance                                 │
+│                                                             │
+│  4. LENDER MATCHING                                        │
+│     ├── Compatibility scoring                              │
+│     ├── Interest rate calculation                          │
+│     ├── Requirement checking                               │
+│     └── Ranking and filtering                              │
+│                                                             │
+│  5. API RESPONSE                                           │
+│     ├── Trust score and level                              │
+│     ├── Matched lenders                                    │
+│     ├── Interest rates                                     │
+│     └── Confidence metrics                                 │
+└─────────────────────────────────────────────────────────────┘
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### AI Model Performance
 
-##  Support
+#### Model Metrics
+- **Algorithm**: Gradient Boosting Regressor
+- **Feature Count**: 12 engineered features
+- **Training Data**: 1000+ synthetic samples (expandable)
+- **Prediction Range**: 0-1000 trust score
+- **Confidence Scoring**: 0.5-1.0 based on data quality
+- **Real-time Processing**: < 100ms per prediction
 
-For support and questions:
-- Create an issue in the repository
-- Contact the development team
-- Check the documentation
+#### Feature Importance (Typical)
+1. **Payment History Score** (25%)
+2. **Credit Score Normalized** (20%)
+3. **Credit Utilization** (15%)
+4. **Debt-to-Income Ratio** (12%)
+5. **Payment Frequency** (10%)
+6. **Income Log** (8%)
+7. **Age** (5%)
+8. **Other Features** (5%)
 
-##  Roadmap
+### AI Capabilities
 
-### Planned Features
-- [ ] Advanced AI lending recommendations
-- [ ] Social lending features
-- [ ] Mobile app (React Native)
-- [ ] International payment support
-- [ ] Advanced analytics and reporting
-- [ ] API for third-party integrations
+#### 1. Behavioral Analysis
+- **Payment Pattern Recognition**: Identifies consistent vs. irregular payment behaviors
+- **Risk Trend Detection**: Predicts future payment reliability
+- **Seasonal Pattern Analysis**: Accounts for seasonal income variations
+- **Loan Type Preference Learning**: Adapts to user loan preferences
 
-### Performance Improvements
-- [ ] Code splitting and lazy loading
-- [ ] Service worker for offline support
-- [ ] Image optimization
-- [ ] Caching strategies
+#### 2. Predictive Scoring
+- **Trust Score Generation**: 0-1000 scale with confidence intervals
+- **Risk Assessment**: Multi-dimensional risk evaluation
+- **Default Probability**: Predicts likelihood of loan default
+- **Creditworthiness**: Comprehensive financial health assessment
 
----
+#### 3. Intelligent Matching
+- **Lender Compatibility**: Multi-factor matching algorithm
+- **Interest Rate Optimization**: Personalized rate calculation
+- **Requirement Checking**: Automated eligibility verification
+- **Ranking System**: Best-fit lender recommendations
 
+#### 4. Real-time Processing
+- **Instant Scoring**: Sub-second trust score calculation
+- **Live Updates**: Real-time score updates with new data
+- **Batch Processing**: Efficient bulk scoring capabilities
+- **API Integration**: Seamless integration with loan applications
+
+### Technology Stack
+
+#### AI/ML Stack
+- **Scikit-learn**: Core ML algorithms and preprocessing
+- **XGBoost**: Gradient boosting for trust scoring
+- **NumPy/Pandas**: Data manipulation and analysis
+- **Joblib**: Model serialization and persistence
+
+#### Backend Stack
+- **FastAPI**: High-performance API framework
+- **Supabase**: Real-time database and authentication
+- **Python 3.9+**: Core programming language
+- **Uvicorn**: ASGI server for production
+
+#### Data Processing
+- **Feature Engineering**: Custom algorithms for financial metrics
+- **Data Validation**: Pydantic schemas for data integrity
+- **Real-time Streaming**: Live data processing capabilities
+- **Batch Processing**: Efficient bulk operations
+
+### API Endpoints
+
+#### Trust Scoring
+- `POST /api/v1/trust-score/calculate` - Calculate trust score
+- `GET /api/v1/trust-score/{user_id}` - Get current trust score
+- `GET /api/v1/trust-score/{user_id}/history` - Trust score history
+- `GET /api/v1/trust-score/{user_id}/analysis` - Payment behavior analysis
+
+#### Lender Matching
+- `POST /api/v1/lenders/match` - Find matching lenders
+- `GET /api/v1/lenders/` - List all lenders
+- `GET /api/v1/lenders/{lender_id}` - Get lender details
+
+#### Loan Applications
+- `POST /api/v1/loans/apply` - Apply for loan with AI scoring
+- `GET /api/v1/loans/user/{user_id}` - User's loan applications
+- `GET /api/v1/loans/analytics/summary` - AI-powered analytics
+
+
+### AI Model Training
+
+#### Training Data Requirements
+- User profiles with financial information
+- Historical payment records
+- Credit scores and employment data
+- Loan application outcomes
+
+#### Model Retraining
+```python
+# Retrain with new data
+POST /api/v1/trust-score/model/retrain
+{
+    "training_data": [
+        {
+            "user": {...},
+            "payments": [...],
+            "trust_score": 750
+        }
+    ]
+}
+```
+
+### Future Enhancements
+
+#### WE ARE WORKING ON
+- **Deep Learning Models**: Neural networks for complex patterns
+- **Natural Language Processing**: Document analysis for loan applications
+- **Computer Vision**: ID verification and document processing
+- **Reinforcement Learning**: Dynamic interest rate optimization
+
+#### Scalability Improvements
+- **Distributed Computing**: Multi-node ML processing
+- **Model Serving**: Dedicated ML model serving infrastructure
+- **Real-time Streaming**: Apache Kafka integration
+- **Microservices**: Modular AI service architecture
