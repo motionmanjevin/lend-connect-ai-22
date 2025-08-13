@@ -56,6 +56,11 @@ export default function Home() {
     }
   }, [user]);
 
+  // Reset scroll position on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const fetchProfile = async () => {
     if (!user) return;
     

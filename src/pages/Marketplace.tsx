@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Filter, Grid, List, Shield, DollarSign, MapPin, Calendar, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -152,6 +152,11 @@ const sortOptions = [
 export default function Marketplace() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"borrow" | "lend" | "requests">("borrow");
+
+  // Reset scroll position on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");

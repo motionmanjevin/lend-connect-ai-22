@@ -45,6 +45,11 @@ export default function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Reset scroll position on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (user) {
       fetchProfile();

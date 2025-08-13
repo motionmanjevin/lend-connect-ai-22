@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrendingUp, Clock, DollarSign, AlertCircle, CheckCircle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -75,6 +75,11 @@ const pastLoans = [
 
 export default function Loans() {
   const [activeTab, setActiveTab] = useState("borrowing");
+
+  // Reset scroll position on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {

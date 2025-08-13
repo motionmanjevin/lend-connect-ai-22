@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, CreditCard, Banknote, Camera, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,11 @@ import { useNavigate } from "react-router-dom";
 export default function CreateListing() {
   const navigate = useNavigate();
   const [listingType, setListingType] = useState<"borrow" | "lend" | null>(null);
+
+  // Reset scroll position on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     amount: "",

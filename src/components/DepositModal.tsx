@@ -175,7 +175,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
               onOpenChange(false);
               setIsLoading(false);
               
-              // Refresh the page to update balance
+              // Refresh profile data instead of reloading page
               setTimeout(() => {
                 window.location.reload();
               }, 1000);
