@@ -165,7 +165,11 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
         description: `₵${amount} has been withdrawn from your account. Funds will be transferred within 1-3 business days.`,
       });
 
-      // Reset form and close modal
+      // Close modal immediately
+      onOpenChange(false);
+      setIsLoading(false);
+
+      // Reset form
       setSelectedAccount(null);
       setAmount("");
       setMobileNumber("");
@@ -174,10 +178,10 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
       setBankAccount("");
       setRoutingNumber("");
       setBankName("");
-      onOpenChange(false);
       
       // Trigger a custom event to notify parent components
       window.dispatchEvent(new CustomEvent('balanceUpdate'));
+      
       
     } catch (error: any) {
       toast({
