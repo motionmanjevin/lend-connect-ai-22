@@ -13,7 +13,7 @@ const quickActions = [
   { icon: Plus, label: "Request Loan", path: "/request-loan", color: "accent" },
   { icon: TrendingUp, label: "Fund Loan", path: "/marketplace", color: "secondary" },
   { icon: DollarSign, label: "Repay Now", path: "/loans", color: "success" },
-  { icon: Shield, label: "Invite Friends", path: "/social", color: "info" },
+  { icon: Shield, label: "Analytics", path: "/analytics", color: "info" },
 ];
 
 const recommendations = [
@@ -163,7 +163,8 @@ export default function Home() {
               return (
                 <Card
                   key={action.label}
-                  className="card-interactive p-4 text-center"
+                  className="card-interactive p-4 text-center cursor-pointer hover:scale-105 transition-transform"
+                  onClick={() => navigate(action.path)}
                 >
                   <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center bg-${action.color}/10`}>
                     <Icon className={`w-6 h-6 text-${action.color}`} />

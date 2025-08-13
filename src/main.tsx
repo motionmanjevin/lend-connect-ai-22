@@ -15,6 +15,7 @@ import CreateListing from './pages/CreateListing.tsx'
 import Loans from './pages/Loans.tsx'
 import Profile from './pages/Profile.tsx'
 import UserProfile from './pages/UserProfile.tsx'
+import Analytics from './pages/Analytics.tsx'
 import NotFound from './pages/NotFound.tsx'
 import { MainLayout } from './components/Layout/MainLayout.tsx'
 import './index.css'
@@ -40,6 +41,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/loans" element={<Loans />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/user/:id" element={<UserProfile />} />
+                <Route path="/analytics" element={<Analytics />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
