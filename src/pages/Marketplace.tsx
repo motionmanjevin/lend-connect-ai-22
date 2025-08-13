@@ -200,25 +200,25 @@ export default function Marketplace() {
         <h1 className="font-heading font-bold text-xl mb-4">Marketplace</h1>
         
         {/* Tab Selection */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
           <Button
             variant={activeTab === "borrow" ? "default" : "outline"}
             onClick={() => setActiveTab("borrow")}
-            className="flex-1"
+            className="flex-shrink-0 min-w-fit"
           >
             Borrower Requests
           </Button>
           <Button
             variant={activeTab === "lend" ? "default" : "outline"}
             onClick={() => setActiveTab("lend")}
-            className="flex-1"
+            className="flex-shrink-0 min-w-fit"
           >
             Lender Offers
           </Button>
           <Button
             variant={activeTab === "requests" ? "default" : "outline"}
             onClick={() => setActiveTab("requests")}
-            className="flex-1"
+            className="flex-shrink-0 min-w-fit"
           >
             Requests
           </Button>
