@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import VerificationModal from "@/components/VerificationModal";
 
 const borrowingLoans = [
   {
@@ -97,6 +98,8 @@ const pastLoans = [
 export default function Loans() {
   const [activeTab, setActiveTab] = useState("borrowing");
   const [loans, setLoans] = useState(borrowingLoans);
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState<{ loanId: number; amount: number } | null>(null);
   const { user } = useAuth();
 
   // Reset scroll position on page load
@@ -104,7 +107,16 @@ export default function Loans() {
     window.scrollTo(0, 0);
   }, []);
 
-  const handlePayNow = async (loanId: number, installmentAmount: number) => {
+  const handlePayNow = (loanId: number, installmentAmount: number) => {
+    setPendingPayment({ loanId, amount: installmentAmount });
+    setIsVerificationOpen(true);
+  };
+
+  const handleVerifiedPayment = async () => {
+    if (!pendingPayment) return;
+    
+    const { loanId, amount } = pendingPayment;
+    
     try {
       // Update the loan state
       setLoans(prevLoans => 
@@ -112,7 +124,7 @@ export default function Loans() {
           if (loan.id === loanId) {
             const newPaymentsMade = loan.paymentsMade + 1;
             const newPaymentsLeft = loan.paymentsLeft - 1;
-            const newRemainingBalance = loan.remainingBalance - installmentAmount;
+            const newRemainingBalance = loan.remainingBalance - amount;
             
             return {
               ...loan,
@@ -138,7 +150,7 @@ export default function Loans() {
           .single();
 
         if (profile) {
-          const newBalance = parseFloat(profile.account_balance?.toString() || '0') - installmentAmount;
+          const newBalance = parseFloat(profile.account_balance?.toString() || '0') - amount;
           
           await supabase
             .from('profiles')
@@ -150,7 +162,7 @@ export default function Loans() {
             .from('transactions')
             .insert({
               user_id: user.id,
-              amount: installmentAmount,
+              amount: amount,
               transaction_type: 'loan_payment',
               status: 'completed',
               currency: 'GHC'
@@ -158,7 +170,8 @@ export default function Loans() {
         }
       }
 
-      toast.success(`Payment of GHC ${installmentAmount} completed successfully!`);
+      toast.success(`Payment of GHC ${amount} completed successfully!`);
+      setPendingPayment(null);
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Payment failed. Please try again.');
@@ -269,7 +282,7 @@ export default function Loans() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       <Button 
                         className="btn-hero flex-1"
                         onClick={() => handlePayNow(loan.id, loan.installmentAmount)}
@@ -277,7 +290,7 @@ export default function Loans() {
                         <DollarSign className="w-4 h-4 mr-1" />
                         Pay Now (GHC {loan.installmentAmount})
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="sm:w-auto w-full">
                         Request Extension
                       </Button>
                     </div>
@@ -400,6 +413,16 @@ export default function Loans() {
           ))}
         </TabsContent>
       </Tabs>
+
+      <VerificationModal
+        isOpen={isVerificationOpen}
+        onClose={() => {
+          setIsVerificationOpen(false);
+          setPendingPayment(null);
+        }}
+        onVerified={handleVerifiedPayment}
+        listingTitle={`Loan Payment of GHC ${pendingPayment?.amount || 0}`}
+      />
     </div>
   );
 }
