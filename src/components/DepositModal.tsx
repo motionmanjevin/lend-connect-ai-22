@@ -175,10 +175,13 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
               onOpenChange(false);
               setIsLoading(false);
               
-              // Refresh profile data instead of reloading page
+              // Trigger a custom event to notify parent components
+              window.dispatchEvent(new CustomEvent('balanceUpdate'));
+              
+              // Also reload as backup
               setTimeout(() => {
                 window.location.reload();
-              }, 1000);
+              }, 2000);
             } catch (error) {
               console.error('Error updating transaction:', error);
               toast({

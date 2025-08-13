@@ -61,6 +61,18 @@ export default function Home() {
     window.scrollTo(0, 0);
   }, []);
 
+  // Listen for balance updates
+  useEffect(() => {
+    const handleBalanceUpdate = () => {
+      if (user) {
+        fetchProfile();
+      }
+    };
+
+    window.addEventListener('balanceUpdate', handleBalanceUpdate);
+    return () => window.removeEventListener('balanceUpdate', handleBalanceUpdate);
+  }, [user]);
+
   const fetchProfile = async () => {
     if (!user) return;
     

@@ -161,6 +161,9 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
       setBankName("");
       onOpenChange(false);
       
+      // Trigger a custom event to notify parent components
+      window.dispatchEvent(new CustomEvent('balanceUpdate'));
+      
       // Refresh profile data
       fetchProfile();
     } catch (error: any) {
