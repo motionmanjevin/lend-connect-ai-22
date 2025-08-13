@@ -61,6 +61,11 @@ export default function Analytics() {
     }
   }, [user]);
 
+  // Reset scroll position on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const fetchProfile = async () => {
     if (!user) return;
     
@@ -96,7 +101,7 @@ export default function Analytics() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <div className="bg-card border-b p-6">
         <div className="flex items-center justify-between">
@@ -111,7 +116,7 @@ export default function Analytics() {
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 max-w-full">
         {/* Key Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="card-elevated">
@@ -204,9 +209,8 @@ export default function Analytics() {
 
         {/* Charts */}
         <Tabs defaultValue="portfolio" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="portfolio">Portfolio Trend</TabsTrigger>
-            <TabsTrigger value="risk">Risk Distribution</TabsTrigger>
             <TabsTrigger value="performance">Loan Performance</TabsTrigger>
           </TabsList>
 
@@ -232,7 +236,7 @@ export default function Analytics() {
                       color: "hsl(var(--accent))",
                     },
                   }}
-                  className="h-[300px]"
+                  className="h-[250px] md:h-[300px] w-full"
                 >
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={portfolioData}>
@@ -262,42 +266,6 @@ export default function Analytics() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="risk">
-            <Card className="card-elevated">
-              <CardHeader>
-                <CardTitle>Risk Distribution</CardTitle>
-                <CardDescription>How your loans are distributed across risk levels</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    value: {
-                      label: "Percentage",
-                    },
-                  }}
-                  className="h-[300px]"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart data={riskDistribution} cx="50%" cy="50%" outerRadius={80}>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      {riskDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </PieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  {riskDistribution.map((risk, index) => (
-                    <div key={index} className="text-center">
-                      <div className="w-4 h-4 rounded-full mx-auto mb-1" style={{ backgroundColor: risk.color }} />
-                      <p className="text-sm font-medium">{risk.name}</p>
-                      <p className="text-xs text-muted-foreground">{risk.value}%</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="performance">
             <Card className="card-elevated">
@@ -321,7 +289,7 @@ export default function Analytics() {
                       color: "hsl(var(--destructive))",
                     },
                   }}
-                  className="h-[300px]"
+                  className="h-[250px] md:h-[300px] w-full"
                 >
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={loanPerformance}>
