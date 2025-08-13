@@ -202,7 +202,7 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md pointer-events-auto">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto pointer-events-auto">
         <DialogHeader>
           <DialogTitle className="text-center">Withdraw Funds</DialogTitle>
         </DialogHeader>
