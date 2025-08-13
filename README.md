@@ -119,7 +119,7 @@ lendme-frontend/
 
 The application will be available at `http://localhost:8080`
 
-## 📱 Available Scripts
+## Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
@@ -127,7 +127,7 @@ The application will be available at `http://localhost:8080`
 - `npm run lint` - Run ESLint
 - `npm run preview` - Preview production build
 
-## 🗄️ Database Schema
+##  Database Schema
 
 ### Core Tables
 
@@ -146,7 +146,7 @@ The application will be available at `http://localhost:8080`
 - User-specific data access policies
 - Automatic profile creation on user registration
 
-## 🔐 Authentication
+##  Authentication
 
 The application uses Supabase Auth with the following features:
 - Email/password authentication
@@ -154,7 +154,7 @@ The application uses Supabase Auth with the following features:
 - Protected routes and components
 - User profile auto-creation
 
-## 💳 Payment Integration
+##  Payment Integration
 
 ### Paystack Integration
 - Multi-channel payment support (Card, Bank, USSD, Mobile Money)
@@ -169,7 +169,7 @@ The application uses Supabase Auth with the following features:
 4. Webhook confirms transaction
 5. Account balance updated
 
-## 🎨 UI/UX Features
+##  UI/UX Features
 
 ### Design System
 - **Modern UI** - Clean, professional interface
@@ -197,7 +197,7 @@ The application uses Supabase Auth with the following features:
 - Animation classes
 - Responsive breakpoints
 
-## 🚀 Deployment
+##  Deployment
 
 ### Build for Production
 ```bash
@@ -217,7 +217,7 @@ VITE_SUPABASE_ANON_KEY=your_production_supabase_anon_key
 VITE_PAYSTACK_PUBLIC_KEY=your_production_paystack_key
 ```
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -231,18 +231,18 @@ VITE_PAYSTACK_PUBLIC_KEY=your_production_paystack_key
 - Write meaningful commit messages
 - Test thoroughly before submitting PRs
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+##  Support
 
 For support and questions:
 - Create an issue in the repository
 - Contact the development team
 - Check the documentation
 
-## 🔮 Roadmap
+##  Roadmap
 
 ### Planned Features
 - [ ] Advanced AI lending recommendations
