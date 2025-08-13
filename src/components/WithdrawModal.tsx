@@ -162,7 +162,7 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
 
       toast({
         title: "Withdrawal Successful",
-        description: `₵${amount} has been withdrawn from your account. Funds will be transferred within 1-3 business days.`,
+        description: `GHC ${amount} has been withdrawn from your account. Funds will be transferred within 1-3 business days.`,
       });
 
       // Close modal and reset loading immediately for responsiveness
@@ -212,7 +212,7 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Available Balance</span>
-              <span className="text-lg font-semibold text-primary">₵{availableBalance.toFixed(2)}</span>
+              <span className="text-lg font-semibold text-primary">GHC {availableBalance.toFixed(2)}</span>
             </div>
           </div>
 
@@ -220,7 +220,7 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
           <div className="space-y-2">
             <Label htmlFor="amount">Withdrawal Amount</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₵</span>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">GHC</span>
               <Input
                 id="amount"
                 type="number"
@@ -382,7 +382,7 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
               className="flex-1"
               disabled={!amount || parseFloat(amount) > availableBalance || isLoading}
             >
-              {isLoading ? "Processing..." : `Withdraw ₵${amount || "0.00"}`}
+              {isLoading ? "Processing..." : `Withdraw GHC ${amount || "0.00"}`}
             </Button>
           </div>
         </div>

@@ -124,7 +124,7 @@ export default function Analytics() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Lent</p>
-                  <p className="text-xl font-bold">₵28,000</p>
+                  <p className="text-xl font-bold">GHC 28,000</p>
                   <div className="flex items-center gap-1 text-success text-sm">
                     <ArrowUp className="w-3 h-3" />
                     <span>+12%</span>
@@ -156,7 +156,7 @@ export default function Analytics() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Profit This Month</p>
-                  <p className="text-xl font-bold">₵2,800</p>
+                  <p className="text-xl font-bold">GHC 2,800</p>
                   <div className="flex items-center gap-1 text-success text-sm">
                     <ArrowUp className="w-3 h-3" />
                     <span>+18%</span>

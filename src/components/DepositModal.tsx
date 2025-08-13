@@ -190,7 +190,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
 
               toast({
                 title: "Payment Successful!",
-                description: `₵${amount} has been deposited to your account.`,
+                description: `GHC ${amount} has been deposited to your account.`,
               });
 
               onOpenChange(false);
@@ -203,7 +203,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
               console.error('Error updating balance:', error);
               toast({
                 title: "Payment Successful!",
-                description: `₵${amount} payment received. Please refresh to see updated balance.`,
+                description: `GHC ${amount} payment received. Please refresh to see updated balance.`,
               });
               onOpenChange(false);
               setIsLoading(false);
@@ -255,7 +255,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₵</span>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">GHC</span>
               <Input
                 id="amount"
                 type="number"
@@ -414,7 +414,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
               Cancel
             </Button>
             <Button onClick={handleDeposit} disabled={isLoading} className="flex-1">
-              {isLoading ? "Processing..." : `Deposit ₵${amount || "0.00"}`}
+              {isLoading ? "Processing..." : `Deposit GHC ${amount || "0.00"}`}
             </Button>
           </div>
         </div>

@@ -19,7 +19,7 @@ const quickActions = [
 const recommendations = [
   {
     id: 1,
-    title: "Personal Loan - ₵5,000",
+    title: "Personal Loan - GHC 5,000",
     rate: "8.5%",
     term: "24 months",
     borrower: "Sarah M.",
@@ -28,7 +28,7 @@ const recommendations = [
   },
   {
     id: 2,
-    title: "Business Loan - ₵15,000",
+    title: "Business Loan - GHC 15,000",
     rate: "12.0%",
     term: "36 months",
     borrower: "Tech Startup Inc.",
@@ -129,11 +129,11 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-muted-foreground text-sm">Total Balance</p>
-              <h2 className="font-heading font-bold text-2xl">₵{profile?.account_balance?.toFixed(2) || '0.00'}</h2>
+              <h2 className="font-heading font-bold text-2xl">GHC {parseFloat(profile?.account_balance?.toString() || '0').toFixed(2)}</h2>
             </div>
             <div className="text-right">
               <p className="text-muted-foreground text-sm">This Month</p>
-              <p className="text-success font-semibold">+₵340.50</p>
+              <p className="text-success font-semibold">+GHC 340.50</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

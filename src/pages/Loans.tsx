@@ -4,20 +4,41 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const borrowingLoans = [
   {
     id: 1,
-    amount: 5000,
+    amount: 12000,
     purpose: "Home Renovation",
     lender: "Investment Group A",
     rate: 8.5,
     term: 24,
-    monthlyPayment: 228,
-    nextPayment: "2024-01-15",
-    remainingBalance: 4200,
+    monthlyPayment: 547,
+    nextPayment: new Date().toISOString().split('T')[0],
+    remainingBalance: 8500,
     status: "active",
-    paymentsLeft: 18
+    paymentsLeft: 16,
+    paymentsMade: 8,
+    installmentAmount: 547
+  },
+  {
+    id: 2,
+    amount: 7500,
+    purpose: "Business Equipment",
+    lender: "Community Fund",
+    rate: 9.2,
+    term: 18,
+    monthlyPayment: 450,
+    nextPayment: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    remainingBalance: 4800,
+    status: "active",
+    paymentsLeft: 11,
+    paymentsMade: 7,
+    installmentAmount: 450
   }
 ];
 
@@ -30,8 +51,8 @@ const lendingLoans = [
     rate: 7.2,
     term: 18,
     monthlyReturn: 185,
-    nextReturn: "2024-01-10",
-    totalEarned: 740,
+    nextReturn: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    totalEarned: 1110,
     status: "active",
     paymentsLeft: 12
   },
@@ -75,11 +96,74 @@ const pastLoans = [
 
 export default function Loans() {
   const [activeTab, setActiveTab] = useState("borrowing");
+  const [loans, setLoans] = useState(borrowingLoans);
+  const { user } = useAuth();
 
   // Reset scroll position on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  const handlePayNow = async (loanId: number, installmentAmount: number) => {
+    try {
+      // Update the loan state
+      setLoans(prevLoans => 
+        prevLoans.map(loan => {
+          if (loan.id === loanId) {
+            const newPaymentsMade = loan.paymentsMade + 1;
+            const newPaymentsLeft = loan.paymentsLeft - 1;
+            const newRemainingBalance = loan.remainingBalance - installmentAmount;
+            
+            return {
+              ...loan,
+              paymentsMade: newPaymentsMade,
+              paymentsLeft: Math.max(0, newPaymentsLeft),
+              remainingBalance: Math.max(0, newRemainingBalance),
+              status: newPaymentsLeft <= 0 ? "completed" : "active",
+              nextPayment: newPaymentsLeft > 0 ? 
+                new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : 
+                null
+            };
+          }
+          return loan;
+        })
+      );
+
+      // Update user balance in database
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('account_balance')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile) {
+          const newBalance = parseFloat(profile.account_balance?.toString() || '0') - installmentAmount;
+          
+          await supabase
+            .from('profiles')
+            .update({ account_balance: newBalance })
+            .eq('user_id', user.id);
+
+          // Create transaction record
+          await supabase
+            .from('transactions')
+            .insert({
+              user_id: user.id,
+              amount: installmentAmount,
+              transaction_type: 'loan_payment',
+              status: 'completed',
+              currency: 'GHC'
+            });
+        }
+      }
+
+      toast.success(`Payment of GHC ${installmentAmount} completed successfully!`);
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Payment failed. Please try again.');
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -109,12 +193,12 @@ export default function Loans() {
         <div className="grid grid-cols-2 gap-3 mb-4">
           <Card className="card-elevated p-4 text-center">
             <TrendingUp className="w-6 h-6 text-success mx-auto mb-2" />
-            <p className="text-lg font-bold">$740</p>
+            <p className="text-lg font-bold">GHC 1,110</p>
             <p className="text-muted-foreground text-xs">Total Earned</p>
           </Card>
           <Card className="card-elevated p-4 text-center">
             <Clock className="w-6 h-6 text-primary mx-auto mb-2" />
-            <p className="text-lg font-bold">$4,200</p>
+            <p className="text-lg font-bold">GHC {loans.reduce((total, loan) => total + loan.remainingBalance, 0).toLocaleString()}</p>
             <p className="text-muted-foreground text-xs">Balance Owed</p>
           </Card>
         </div>
@@ -130,11 +214,11 @@ export default function Loans() {
 
         {/* Borrowing Tab */}
         <TabsContent value="borrowing" className="space-y-4 mt-4">
-          {borrowingLoans.map((loan) => (
+          {loans.map((loan) => (
             <Card key={loan.id} className="card-elevated p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold">${loan.amount.toLocaleString()}</h3>
+                  <h3 className="font-semibold">GHC {loan.amount.toLocaleString()}</h3>
                   <p className="text-muted-foreground text-sm">{loan.purpose}</p>
                   <p className="text-muted-foreground text-xs">from {loan.lender}</p>
                 </div>
@@ -148,48 +232,65 @@ export default function Loans() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                    <p className="font-bold">${loan.monthlyPayment}</p>
+                    <p className="font-bold">GHC {loan.monthlyPayment}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Remaining</p>
-                    <p className="font-bold">${loan.remainingBalance.toLocaleString()}</p>
+                    <p className="font-bold">GHC {loan.remainingBalance.toLocaleString()}</p>
                   </div>
                 </div>
 
-                {/* Next Payment */}
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Calendar className="w-4 h-4 text-accent" />
-                    <span className="text-sm font-medium">Next Payment Due</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{loan.nextPayment}</p>
-                  <p className="text-lg font-bold text-accent">${loan.monthlyPayment}</p>
-                </div>
+                {loan.status === "active" && loan.nextPayment && (
+                  <>
+                    {/* Next Payment */}
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Calendar className="w-4 h-4 text-accent" />
+                        <span className="text-sm font-medium">Next Payment Due</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{loan.nextPayment}</p>
+                      <p className="text-lg font-bold text-accent">GHC {loan.monthlyPayment}</p>
+                    </div>
 
-                {/* Progress */}
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="text-muted-foreground">{loan.paymentsLeft} payments left</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-[var(--gradient-accent)] h-2 rounded-full"
-                      style={{ width: `${((loan.term - loan.paymentsLeft) / loan.term) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
+                    {/* Progress */}
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="text-muted-foreground">{loan.paymentsLeft} payments left</span>
+                      </div>
+                      <Progress 
+                        value={((loan.paymentsMade) / loan.term) * 100} 
+                        className="w-full h-3"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                        <span>{loan.paymentsMade} paid</span>
+                        <span>{Math.round(((loan.paymentsMade) / loan.term) * 100)}% complete</span>
+                      </div>
+                    </div>
 
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <Button className="btn-hero flex-1">
-                    <DollarSign className="w-4 h-4 mr-1" />
-                    Pay Now
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Request Extension
-                  </Button>
-                </div>
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button 
+                        className="btn-hero flex-1"
+                        onClick={() => handlePayNow(loan.id, loan.installmentAmount)}
+                      >
+                        <DollarSign className="w-4 h-4 mr-1" />
+                        Pay Now (GHC {loan.installmentAmount})
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Request Extension
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {loan.status === "completed" && (
+                  <div className="bg-success/10 rounded-lg p-3 text-center">
+                    <CheckCircle className="w-6 h-6 text-success mx-auto mb-2" />
+                    <p className="text-sm font-medium text-success">Loan Completed</p>
+                    <p className="text-xs text-muted-foreground">All payments made successfully</p>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
@@ -201,7 +302,7 @@ export default function Loans() {
             <Card key={loan.id} className="card-elevated p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold">${loan.amount.toLocaleString()}</h3>
+                  <h3 className="font-semibold">GHC {loan.amount.toLocaleString()}</h3>
                   <p className="text-muted-foreground text-sm">to {loan.borrower}</p>
                   <p className="text-muted-foreground text-xs">{loan.purpose}</p>
                 </div>
@@ -216,12 +317,12 @@ export default function Loans() {
                   <div>
                     <p className="text-sm text-muted-foreground">Monthly Return</p>
                     <p className="font-bold text-success">
-                      {loan.status === "active" ? `$${loan.monthlyReturn}` : "Completed"}
+                      {loan.status === "active" ? `GHC ${loan.monthlyReturn}` : "Completed"}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Total Earned</p>
-                    <p className="font-bold text-success">${loan.totalEarned}</p>
+                    <p className="font-bold text-success">GHC {loan.totalEarned}</p>
                   </div>
                 </div>
 
@@ -261,7 +362,7 @@ export default function Loans() {
             <Card key={loan.id} className="card-elevated p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold">${loan.amount.toLocaleString()}</h3>
+                  <h3 className="font-semibold">GHC {loan.amount.toLocaleString()}</h3>
                   <p className="text-muted-foreground text-sm">
                     {loan.type === "borrowing" ? loan.purpose : `to ${loan.borrower}`}
                   </p>
@@ -284,7 +385,7 @@ export default function Loans() {
                     {loan.type === "borrowing" ? "Total Paid" : "Total Earned"}
                   </p>
                   <p className="font-bold">
-                    ${loan.type === "borrowing" ? loan.totalPaid : loan.totalEarned}
+                    GHC {loan.type === "borrowing" ? loan.totalPaid : loan.totalEarned}
                   </p>
                 </div>
               </div>

@@ -114,7 +114,7 @@ export default function Profile() {
       // Trigger balance update event for other components
       window.dispatchEvent(new CustomEvent('balanceUpdate'));
       
-      alert(`Balance ${amount > 0 ? 'increased' : 'decreased'} by ₵${Math.abs(amount)}`);
+      alert(`Balance ${amount > 0 ? 'increased' : 'decreased'} by GHC ${Math.abs(amount)}`);
     } catch (error: any) {
       console.error('Error adjusting balance:', error);
       alert(`Error adjusting balance: ${error.message}`);
@@ -131,17 +131,23 @@ export default function Profile() {
       <div className="p-4 bg-[var(--gradient-hero)] text-white">
         <div className="flex items-center gap-4 mb-4">
           <div className="relative">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="font-heading font-bold text-2xl">{profileData.avatar}</span>
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                <span className="font-heading font-bold text-xl text-foreground">
+                  {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                </span>
+              </div>
             </div>
             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full flex items-center justify-center border-2 border-white">
               <Shield className="w-3 h-3 text-white" />
             </div>
           </div>
           <div className="flex-1">
-            <h1 className="font-heading font-bold text-xl">{profile?.full_name || 'User'}</h1>
-            <p className="text-white/80 text-sm">{profile?.email}</p>
-            <p className="text-white/80 text-xs">Member since {new Date(profile?.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+            <h1 className="font-heading font-bold text-xl text-white drop-shadow-sm">{profile?.full_name || 'User'}</h1>
+            <p className="text-white/90 text-sm drop-shadow-sm">{profile?.email}</p>
+            <p className="text-white/80 text-xs drop-shadow-sm">
+              Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Dec 2023'}
+            </p>
           </div>
           <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
             <Edit className="w-4 h-4" />
@@ -170,77 +176,18 @@ export default function Profile() {
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-3">
           <Card className="card-elevated p-3 text-center">
-            <p className="text-lg font-bold text-success">₵{profile?.account_balance?.toFixed(2) || '0.00'}</p>
+            <p className="text-lg font-bold text-success">GHC {parseFloat(profile?.account_balance?.toString() || '0').toFixed(2)}</p>
             <p className="text-muted-foreground text-xs">Balance</p>
           </Card>
           <Card className="card-elevated p-3 text-center">
-            <p className="text-lg font-bold text-accent">₵0.00</p>
+            <p className="text-lg font-bold text-accent">GHC 19,500</p>
             <p className="text-muted-foreground text-xs">Total Borrowed</p>
           </Card>
           <Card className="card-elevated p-3 text-center">
-            <p className="text-lg font-bold text-primary">0</p>
+            <p className="text-lg font-bold text-primary">2</p>
             <p className="text-muted-foreground text-xs">Active Loans</p>
           </Card>
         </div>
-
-        {/* Manual Balance Adjustment - Admin Controls */}
-        <Card className="card-elevated p-4">
-          <h3 className="font-heading font-semibold mb-3">Manual Balance Adjustment</h3>
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => adjustBalance(10)}
-                className="flex-1"
-              >
-                Add ₵10
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => adjustBalance(50)}
-                className="flex-1"
-              >
-                Add ₵50
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => adjustBalance(100)}
-                className="flex-1"
-              >
-                Add ₵100
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => adjustBalance(-10)}
-                className="flex-1 text-destructive hover:text-destructive"
-              >
-                Subtract ₵10
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => adjustBalance(-50)}
-                className="flex-1 text-destructive hover:text-destructive"
-              >
-                Subtract ₵50
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => adjustBalance(-100)}
-                className="flex-1 text-destructive hover:text-destructive"
-              >
-                Subtract ₵100
-              </Button>
-            </div>
-          </div>
-        </Card>
 
         {/* Verification Status */}
         <Card className="card-elevated p-4">

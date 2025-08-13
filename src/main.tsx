@@ -40,7 +40,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/create-listing" element={<CreateListing />} />
                 <Route path="/loans" element={<Loans />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/user/:id" element={<UserProfile />} />
+                <Route path="/user-profile/:id" element={<UserProfile />} />
                 <Route path="/analytics" element={<Analytics />} />
               </Route>
               <Route path="*" element={<NotFound />} />
