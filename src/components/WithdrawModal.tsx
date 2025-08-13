@@ -123,6 +123,23 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
     setIsLoading(true);
 
     try {
+      // Get current user profile to get current balance
+      const { data: currentProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('account_balance')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const currentBalance = Number(currentProfile.account_balance) || 0;
+      const newBalance = currentBalance - withdrawAmount;
+
+      // Ensure we don't go below zero
+      if (newBalance < 0) {
+        throw new Error("Insufficient balance for withdrawal");
+      }
+
       // Create withdrawal transaction record
       const { error: transactionError } = await supabase
         .from('transactions')
@@ -130,24 +147,22 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
           user_id: user.id,
           amount: withdrawAmount,
           transaction_type: 'withdrawal',
-          status: 'pending'
+          status: 'completed'
         });
 
       if (transactionError) throw transactionError;
 
-      // Update user balance immediately (optimistic update)
+      // Update user balance
       const { error: balanceError } = await supabase
         .from('profiles')
-        .update({ 
-          account_balance: availableBalance - withdrawAmount 
-        })
+        .update({ account_balance: newBalance })
         .eq('user_id', user.id);
 
       if (balanceError) throw balanceError;
 
       toast({
-        title: "Withdrawal Initiated",
-        description: `Your withdrawal of ₵${amount} has been initiated successfully. Funds will be transferred within 1-3 business days.`,
+        title: "Withdrawal Successful",
+        description: `₵${amount} has been withdrawn from your account. Funds will be transferred within 1-3 business days.`,
       });
 
       // Reset form and close modal
@@ -164,8 +179,6 @@ export function WithdrawModal({ open, onOpenChange }: WithdrawModalProps) {
       // Trigger a custom event to notify parent components
       window.dispatchEvent(new CustomEvent('balanceUpdate'));
       
-      // Refresh profile data
-      fetchProfile();
     } catch (error: any) {
       toast({
         title: "Withdrawal Failed",

@@ -154,10 +154,31 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
         callback: function(response: any) {
           console.log('Payment successful:', response);
           
-          // Update transaction status (non-blocking)
-          const updateTransaction = async () => {
+          // Update user balance and transaction status
+          const updateBalanceAndTransaction = async () => {
             try {
-              const { error } = await supabase
+              // Get current user profile to get current balance
+              const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('account_balance')
+                .eq('user_id', user.id)
+                .single();
+
+              if (profileError) throw profileError;
+
+              const currentBalance = Number(profile.account_balance) || 0;
+              const newBalance = currentBalance + parseFloat(amount);
+
+              // Update balance
+              const { error: balanceError } = await supabase
+                .from('profiles')
+                .update({ account_balance: newBalance })
+                .eq('user_id', user.id);
+
+              if (balanceError) throw balanceError;
+
+              // Update transaction status
+              const { error: transactionError } = await supabase
                 .from('transactions')
                 .update({ 
                   status: 'completed',
@@ -165,7 +186,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
                 })
                 .eq('id', transaction.id);
 
-              if (error) throw error;
+              if (transactionError) throw transactionError;
 
               toast({
                 title: "Payment Successful!",
@@ -178,22 +199,18 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
               // Trigger a custom event to notify parent components
               window.dispatchEvent(new CustomEvent('balanceUpdate'));
               
-              // Also reload as backup
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
             } catch (error) {
-              console.error('Error updating transaction:', error);
+              console.error('Error updating balance:', error);
               toast({
                 title: "Payment Successful!",
-                description: `₵${amount} has been deposited. Please refresh to see updated balance.`,
+                description: `₵${amount} payment received. Please refresh to see updated balance.`,
               });
               onOpenChange(false);
               setIsLoading(false);
             }
           };
 
-          updateTransaction();
+          updateBalanceAndTransaction();
         },
         onClose: function() {
           toast({
