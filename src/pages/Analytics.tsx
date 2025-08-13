@@ -6,7 +6,7 @@ import {
   Users, 
   Target,
   Calendar,
-  PieChart,
+  PieChart as PieChartIcon,
   BarChart3,
   Brain,
   ArrowUp,
@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart as RechartsPieChart, Cell, BarChart, Bar } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Cell, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -278,14 +278,12 @@ export default function Analytics() {
                   className="h-[300px]"
                 >
                   <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
+                    <PieChart data={riskDistribution} cx="50%" cy="50%" outerRadius={80}>
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <RechartsPieChart data={riskDistribution} cx="50%" cy="50%" outerRadius={80}>
-                        {riskDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </RechartsPieChart>
-                    </RechartsPieChart>
+                      {riskDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </PieChart>
                   </ResponsiveContainer>
                 </ChartContainer>
                 <div className="grid grid-cols-3 gap-4 mt-4">
