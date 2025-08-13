@@ -205,6 +205,9 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
         }
       });
 
+      // Close the modal before opening Paystack popup
+      onOpenChange(false);
+      
       // Open the payment popup
       paystack.openIframe();
 

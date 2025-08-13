@@ -78,6 +78,40 @@ export default function Profile() {
     navigate("/");
   };
 
+  const adjustBalance = async (amount: number) => {
+    if (!user || !profile) return;
+    
+    const currentBalance = profile.account_balance || 0;
+    const newBalance = currentBalance + amount;
+    
+    // Prevent negative balance
+    if (newBalance < 0) {
+      alert("Cannot reduce balance below zero");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          account_balance: newBalance 
+        })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Refresh profile data
+      await fetchProfile();
+      
+      // Trigger balance update event for other components
+      window.dispatchEvent(new CustomEvent('balanceUpdate'));
+      
+      alert(`Balance ${amount > 0 ? 'increased' : 'decreased'} by ₵${Math.abs(amount)}`);
+    } catch (error: any) {
+      alert(`Error adjusting balance: ${error.message}`);
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
   }
@@ -139,6 +173,65 @@ export default function Profile() {
             <p className="text-muted-foreground text-xs">Active Loans</p>
           </Card>
         </div>
+
+        {/* Manual Balance Adjustment - Admin Controls */}
+        <Card className="card-elevated p-4">
+          <h3 className="font-heading font-semibold mb-3">Manual Balance Adjustment</h3>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => adjustBalance(10)}
+                className="flex-1"
+              >
+                Add ₵10
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => adjustBalance(50)}
+                className="flex-1"
+              >
+                Add ₵50
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => adjustBalance(100)}
+                className="flex-1"
+              >
+                Add ₵100
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => adjustBalance(-10)}
+                className="flex-1 text-destructive hover:text-destructive"
+              >
+                Subtract ₵10
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => adjustBalance(-50)}
+                className="flex-1 text-destructive hover:text-destructive"
+              >
+                Subtract ₵50
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => adjustBalance(-100)}
+                className="flex-1 text-destructive hover:text-destructive"
+              >
+                Subtract ₵100
+              </Button>
+            </div>
+          </div>
+        </Card>
 
         {/* Verification Status */}
         <Card className="card-elevated p-4">
