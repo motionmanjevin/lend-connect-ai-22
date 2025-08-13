@@ -128,7 +128,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="p-4 bg-[var(--gradient-hero)] text-white">
+      <div className="p-4 bg-[var(--gradient-hero)] text-foreground">
         <div className="flex items-center gap-4 mb-4">
           <div className="relative">
             <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
@@ -143,33 +143,17 @@ export default function Profile() {
             </div>
           </div>
           <div className="flex-1">
-            <h1 className="font-heading font-bold text-xl text-white drop-shadow-sm">{profile?.full_name || 'User'}</h1>
-            <p className="text-white/90 text-sm drop-shadow-sm">{profile?.email}</p>
-            <p className="text-white/80 text-xs drop-shadow-sm">
+            <h1 className="font-heading font-bold text-xl text-foreground drop-shadow-sm">{profile?.full_name || 'User'}</h1>
+            <p className="text-foreground/90 text-sm drop-shadow-sm">{profile?.email}</p>
+            <p className="text-foreground/80 text-xs drop-shadow-sm">
               Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Dec 2023'}
             </p>
           </div>
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button variant="ghost" size="sm" className="text-foreground hover:bg-foreground/20">
             <Edit className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Trust Score */}
-        <div className="bg-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/80 text-sm">Trust Score</span>
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-secondary fill-current" />
-              <span className="font-bold text-lg">{profileData.trustScore}%</span>
-            </div>
-          </div>
-          <div className="w-full bg-white/20 rounded-full h-2">
-            <div
-              className="bg-secondary h-2 rounded-full"
-              style={{ width: `${profileData.trustScore}%` }}
-            ></div>
-          </div>
-        </div>
       </div>
 
       <div className="p-4 space-y-4 -mt-4 relative z-10">
