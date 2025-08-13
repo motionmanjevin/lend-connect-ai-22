@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import VerificationModal from "@/components/VerificationModal";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const borrowRequests = [
   {
@@ -151,51 +154,267 @@ const sortOptions = [
 
 export default function Marketplace() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"borrow" | "lend" | "requests">("borrow");
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [sentOffers, setSentOffers] = useState<Set<string>>(new Set());
+  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+  const [acceptedRequests, setAcceptedRequests] = useState<Set<string>>(new Set());
+  const [declinedRequests, setDeclinedRequests] = useState<Set<string>>(new Set());
+  const [selectedListing, setSelectedListing] = useState<{ id: string; title: string; type: string; ownerId: string } | null>(null);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  
+  // Real data from database
+  const [borrowListings, setBorrowListings] = useState<any[]>([]);
+  const [lendListings, setLendListings] = useState<any[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Reset scroll position on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  const [viewMode, setViewMode] = useState<"card" | "list">("card");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  const [sentOffers, setSentOffers] = useState<Set<number>>(new Set());
-  const [sentRequests, setSentRequests] = useState<Set<number>>(new Set());
-  const [acceptedRequests, setAcceptedRequests] = useState<Set<number>>(new Set());
-  const [declinedRequests, setDeclinedRequests] = useState<Set<number>>(new Set());
-  const [selectedListing, setSelectedListing] = useState<{ id: number; title: string } | null>(null);
-  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
-  const handleMakeOffer = (id: number, title: string) => {
-    setSelectedListing({ id, title });
+  // Load data from database
+  useEffect(() => {
+    const loadListings = async () => {
+      try {
+        // Load borrow listings
+        const { data: borrowData } = await supabase
+          .from('listings')
+          .select(`
+            *,
+            profiles!listings_user_id_fkey(full_name, email)
+          `)
+          .eq('listing_type', 'borrow')
+          .eq('status', 'active');
+
+        // Load lend listings
+        const { data: lendData } = await supabase
+          .from('listings')
+          .select(`
+            *,
+            profiles!listings_user_id_fkey(full_name, email)
+          `)
+          .eq('listing_type', 'lend')
+          .eq('status', 'active');
+
+        // Load incoming requests if user is logged in
+        let requestsData = [];
+        if (user) {
+          const { data } = await supabase
+            .from('loan_requests')
+            .select(`
+              *,
+              listings!loan_requests_listing_id_fkey(*),
+              profiles!loan_requests_requester_id_fkey(full_name, email)
+            `)
+            .eq('listing_owner_id', user.id)
+            .eq('status', 'pending');
+          requestsData = data || [];
+        }
+
+        setBorrowListings(borrowData || []);
+        setLendListings(lendData || []);
+        setIncomingRequests(requestsData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading listings:', error);
+        setLoading(false);
+      }
+    };
+
+    loadListings();
+  }, [user]);
+
+  const handleMakeOffer = (id: string, title: string, type: string, ownerId: string) => {
+    setSelectedListing({ id, title, type, ownerId });
     setIsVerificationModalOpen(true);
   };
 
-  const handleRequestLoan = (id: number, title: string) => {
-    setSelectedListing({ id, title });
+  const handleRequestLoan = (id: string, title: string, type: string, ownerId: string) => {
+    setSelectedListing({ id, title, type, ownerId });
     setIsVerificationModalOpen(true);
   };
 
-  const handleOfferVerified = () => {
-    if (selectedListing) {
+  const handleOfferVerified = async () => {
+    if (!selectedListing || !user) return;
+    
+    try {
+      // Create loan request
+      const { error } = await supabase
+        .from('loan_requests')
+        .insert({
+          listing_id: selectedListing.id,
+          requester_id: user.id,
+          listing_owner_id: selectedListing.ownerId,
+          amount: 0, // Will be filled from listing details
+          interest_rate: 0, // Will be filled from listing details
+          duration: 0, // Will be filled from listing details
+          message: "I would like to make an offer for your loan request."
+        });
+
+      if (error) throw error;
+
       setSentOffers(prev => new Set([...prev, selectedListing.id]));
+      toast.success("Offer sent successfully!");
+    } catch (error) {
+      console.error('Error sending offer:', error);
+      toast.error("Failed to send offer. Please try again.");
     }
   };
 
-  const handleRequestVerified = () => {
-    if (selectedListing) {
+  const handleRequestVerified = async () => {
+    if (!selectedListing || !user) return;
+    
+    try {
+      // Create loan request
+      const { error } = await supabase
+        .from('loan_requests')
+        .insert({
+          listing_id: selectedListing.id,
+          requester_id: user.id,
+          listing_owner_id: selectedListing.ownerId,
+          amount: 0, // Will be filled from listing details
+          interest_rate: 0, // Will be filled from listing details
+          duration: 0, // Will be filled from listing details
+          message: "I would like to request a loan from your offer."
+        });
+
+      if (error) throw error;
+
       setSentRequests(prev => new Set([...prev, selectedListing.id]));
+      toast.success("Loan request sent successfully!");
+    } catch (error) {
+      console.error('Error sending request:', error);
+      toast.error("Failed to send request. Please try again.");
     }
   };
 
-  const handleAcceptRequest = (id: number) => {
-    setAcceptedRequests(prev => new Set([...prev, id]));
-    // In real app, this would trigger transaction process
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      const request = incomingRequests.find(r => r.id === requestId);
+      if (!request || !user) return;
+
+      // Calculate monthly payment
+      const principal = parseFloat(request.amount);
+      const monthlyRate = parseFloat(request.interest_rate) / 100 / 12;
+      const numPayments = parseInt(request.duration);
+      const monthlyPayment = (principal * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                            (Math.pow(1 + monthlyRate, numPayments) - 1);
+
+      // Create loan
+      const { error: loanError } = await supabase
+        .from('loans')
+        .insert({
+          listing_id: request.listing_id,
+          borrower_id: request.requester_id,
+          lender_id: user.id,
+          amount: principal,
+          interest_rate: parseFloat(request.interest_rate),
+          duration: numPayments,
+          monthly_payment: monthlyPayment,
+          remaining_balance: principal,
+          payments_left: numPayments,
+          purpose: request.listings?.purpose || 'General loan',
+          next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        });
+
+      if (loanError) throw loanError;
+
+      // Update request status
+      const { error: updateError } = await supabase
+        .from('loan_requests')
+        .update({ status: 'accepted' })
+        .eq('id', requestId);
+
+      if (updateError) throw updateError;
+
+      // Update listing status
+      const { error: listingError } = await supabase
+        .from('listings')
+        .update({ status: 'completed' })
+        .eq('id', request.listing_id);
+
+      if (listingError) throw listingError;
+
+      // Transfer money from lender to borrower
+      const { data: lenderProfile } = await supabase
+        .from('profiles')
+        .select('account_balance')
+        .eq('user_id', user.id)
+        .single();
+
+      const { data: borrowerProfile } = await supabase
+        .from('profiles')
+        .select('account_balance')
+        .eq('user_id', request.requester_id)
+        .single();
+
+      if (lenderProfile && borrowerProfile) {
+        const lenderBalance = parseFloat(lenderProfile.account_balance?.toString() || '0');
+        const borrowerBalance = parseFloat(borrowerProfile.account_balance?.toString() || '0');
+
+        if (lenderBalance >= principal) {
+          // Update balances
+          await supabase
+            .from('profiles')
+            .update({ account_balance: lenderBalance - principal })
+            .eq('user_id', user.id);
+
+          await supabase
+            .from('profiles')
+            .update({ account_balance: borrowerBalance + principal })
+            .eq('user_id', request.requester_id);
+
+          // Create transaction records
+          await supabase
+            .from('transactions')
+            .insert([
+              {
+                user_id: user.id,
+                amount: -principal,
+                transaction_type: 'loan_disbursement',
+                status: 'completed'
+              },
+              {
+                user_id: request.requester_id,
+                amount: principal,
+                transaction_type: 'loan_received',
+                status: 'completed'
+              }
+            ]);
+        }
+      }
+
+      setAcceptedRequests(prev => new Set([...prev, requestId]));
+      toast.success("Request accepted and loan created successfully!");
+      
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      toast.error("Failed to accept request. Please try again.");
+    }
   };
 
-  const handleDeclineRequest = (id: number) => {
-    setDeclinedRequests(prev => new Set([...prev, id]));
+  const handleDeclineRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('loan_requests')
+        .update({ status: 'declined' })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      setDeclinedRequests(prev => new Set([...prev, requestId]));
+      toast.success("Request declined.");
+    } catch (error) {
+      console.error('Error declining request:', error);
+      toast.error("Failed to decline request. Please try again.");
+    }
   };
 
   return (
@@ -293,59 +512,65 @@ export default function Marketplace() {
 
       {/* Listings */}
       <div className="p-4 space-y-4">
-        {activeTab === "borrow" ? (
-          borrowRequests.map((request) => (
-            <Card key={request.id} className="card-interactive p-4">
+        {loading ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Loading listings...</p>
+          </div>
+        ) : activeTab === "borrow" ? (
+          borrowListings.map((listing) => (
+            <Card key={listing.id} className="card-interactive p-4">
               <div className="w-full">
                 {/* Content */}
                 <div className="w-full">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{request.borrower}</h3>
-                        {request.verified && (
-                          <Shield className="w-4 h-4 text-success" />
-                        )}
+                        <h3 className="font-semibold">{listing.profiles?.full_name || 'Anonymous'}</h3>
+                        <Shield className="w-4 h-4 text-success" />
                       </div>
-                      <p className="text-muted-foreground text-sm">{request.purpose}</p>
+                      <p className="text-muted-foreground text-sm">{listing.purpose || 'General loan'}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{request.postedDays} days ago</p>
+                      <p className="text-xs text-muted-foreground">
+                        {Math.floor((Date.now() - new Date(listing.created_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                      </p>
                     </div>
                   </div>
 
                   {/* Request Details */}
                   <div className="grid grid-cols-2 gap-4 mb-3">
                     <div>
-                      <p className="text-2xl font-bold">GHC {request.amount.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">GHC {parseFloat(listing.amount).toLocaleString()}</p>
                       <p className="text-muted-foreground text-sm">Amount Needed</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-primary">Up to {request.maxRate}%</p>
-                      <p className="text-muted-foreground text-sm">{request.term} months</p>
+                      <p className="text-xl font-bold text-primary">Up to {parseFloat(listing.interest_rate)}%</p>
+                      <p className="text-muted-foreground text-sm">{listing.duration} months</p>
                     </div>
                   </div>
 
                   {/* Location and Story */}
                   <div className="flex items-center gap-1 mb-2">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{request.location}</span>
+                    <span className="text-sm text-muted-foreground">{listing.location || 'Not specified'}</span>
                   </div>
 
-                  <p className="text-sm text-muted-foreground mb-4">{request.story}</p>
+                  <p className="text-sm text-muted-foreground mb-4">{listing.story}</p>
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
                     <Button 
-                      className={sentOffers.has(request.id) ? "bg-success text-success-foreground hover:bg-success/90 flex-1" : "btn-hero flex-1"}
-                      onClick={() => handleMakeOffer(request.id, request.purpose)}
-                      disabled={sentOffers.has(request.id)}
+                      className={sentOffers.has(listing.id) ? "bg-success text-success-foreground hover:bg-success/90 flex-1" : "btn-hero flex-1"}
+                      onClick={() => handleMakeOffer(listing.id, listing.purpose || 'loan', 'borrow', listing.user_id)}
+                      disabled={sentOffers.has(listing.id) || listing.user_id === user?.id}
                     >
-                      {sentOffers.has(request.id) ? (
+                      {sentOffers.has(listing.id) ? (
                         <>
                           <Check className="w-4 h-4 mr-1" />
                           Sent Offer
                         </>
+                      ) : listing.user_id === user?.id ? (
+                        "Your Listing"
                       ) : (
                         <>
                           <DollarSign className="w-4 h-4 mr-1" />
@@ -353,7 +578,7 @@ export default function Marketplace() {
                         </>
                       )}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/user-profile/${request.id}`)}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/user-profile/${listing.user_id}`)}>
                       View Profile
                     </Button>
                   </div>
@@ -362,58 +587,60 @@ export default function Marketplace() {
             </Card>
           ))
         ) : activeTab === "lend" ? (
-          lendOffers.map((offer) => (
-            <Card key={offer.id} className="card-interactive p-4">
+          lendListings.map((listing) => (
+            <Card key={listing.id} className="card-interactive p-4">
               <div className="w-full">
                 {/* Content */}
                 <div className="w-full">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{offer.lender}</h3>
-                        {offer.verified && (
-                          <Shield className="w-4 h-4 text-success" />
-                        )}
+                        <h3 className="font-semibold">{listing.profiles?.full_name || 'Anonymous'}</h3>
+                        <Shield className="w-4 h-4 text-success" />
                       </div>
-                      <p className="text-muted-foreground text-sm">{offer.criteria}</p>
+                      <p className="text-muted-foreground text-sm">Lending Offer</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{offer.postedDays} days ago</p>
+                      <p className="text-xs text-muted-foreground">
+                        {Math.floor((Date.now() - new Date(listing.created_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                      </p>
                     </div>
                   </div>
 
                   {/* Offer Details */}
                   <div className="grid grid-cols-2 gap-4 mb-3">
                     <div>
-                      <p className="text-2xl font-bold">GHC {offer.maxAmount.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">GHC {parseFloat(listing.amount).toLocaleString()}</p>
                       <p className="text-muted-foreground text-sm">Max Amount</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-secondary">From {offer.minRate}%</p>
-                      <p className="text-muted-foreground text-sm">Up to {offer.maxTerm} months</p>
+                      <p className="text-xl font-bold text-secondary">From {parseFloat(listing.interest_rate)}%</p>
+                      <p className="text-muted-foreground text-sm">Up to {listing.duration} months</p>
                     </div>
                   </div>
 
                   {/* Location and Story */}
                   <div className="flex items-center gap-1 mb-2">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{offer.location}</span>
+                    <span className="text-sm text-muted-foreground">{listing.location || 'Not specified'}</span>
                   </div>
 
-                  <p className="text-sm text-muted-foreground mb-4">{offer.story}</p>
+                  <p className="text-sm text-muted-foreground mb-4">{listing.story}</p>
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
                     <Button 
-                      className={sentRequests.has(offer.id) ? "bg-success text-success-foreground hover:bg-success/90 flex-1" : "btn-hero flex-1"}
-                      onClick={() => handleRequestLoan(offer.id, offer.criteria)}
-                      disabled={sentRequests.has(offer.id)}
+                      className={sentRequests.has(listing.id) ? "bg-success text-success-foreground hover:bg-success/90 flex-1" : "btn-hero flex-1"}
+                      onClick={() => handleRequestLoan(listing.id, 'lending offer', 'lend', listing.user_id)}
+                      disabled={sentRequests.has(listing.id) || listing.user_id === user?.id}
                     >
-                      {sentRequests.has(offer.id) ? (
+                      {sentRequests.has(listing.id) ? (
                         <>
                           <Check className="w-4 h-4 mr-1" />
                           Sent Request
                         </>
+                      ) : listing.user_id === user?.id ? (
+                        "Your Listing"
                       ) : (
                         <>
                           <DollarSign className="w-4 h-4 mr-1" />
@@ -421,7 +648,7 @@ export default function Marketplace() {
                         </>
                       )}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/user-profile/${offer.id}`)}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/user-profile/${listing.user_id}`)}>
                       View Profile
                     </Button>
                   </div>

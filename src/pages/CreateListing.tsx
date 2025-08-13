@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function CreateListing() {
   const navigate = useNavigate();
@@ -48,10 +50,41 @@ export default function CreateListing() {
     }
   };
 
-  const handleSubmit = () => {
-    // Handle submission logic here
-    console.log("Submitting:", { listingType, ...formData });
-    navigate("/marketplace");
+  const handleSubmit = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to create a listing");
+        navigate("/auth");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('listings')
+        .insert({
+          user_id: user.id,
+          listing_type: listingType,
+          amount: parseFloat(formData.amount),
+          purpose: formData.purpose || null,
+          duration: parseInt(formData.duration),
+          interest_rate: parseFloat(formData.rate),
+          story: formData.story,
+          location: formData.location,
+          collateral: formData.collateral || null
+        });
+
+      if (error) {
+        console.error('Error creating listing:', error);
+        toast.error("Failed to create listing. Please try again.");
+        return;
+      }
+
+      toast.success("Listing created successfully!");
+      navigate("/marketplace");
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error("Failed to create listing. Please try again.");
+    }
   };
 
   if (!listingType) {

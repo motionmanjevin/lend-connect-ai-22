@@ -14,6 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
+      listings: {
+        Row: {
+          amount: number
+          collateral: string | null
+          created_at: string
+          duration: number
+          id: string
+          interest_rate: number
+          listing_type: string
+          location: string | null
+          purpose: string | null
+          status: string
+          story: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          collateral?: string | null
+          created_at?: string
+          duration: number
+          id?: string
+          interest_rate: number
+          listing_type: string
+          location?: string | null
+          purpose?: string | null
+          status?: string
+          story?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          collateral?: string | null
+          created_at?: string
+          duration?: number
+          id?: string
+          interest_rate?: number
+          listing_type?: string
+          location?: string | null
+          purpose?: string | null
+          status?: string
+          story?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loan_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          duration: number
+          id: string
+          interest_rate: number
+          listing_id: string
+          listing_owner_id: string
+          message: string | null
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          duration: number
+          id?: string
+          interest_rate: number
+          listing_id: string
+          listing_owner_id: string
+          message?: string | null
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          duration?: number
+          id?: string
+          interest_rate?: number
+          listing_id?: string
+          listing_owner_id?: string
+          message?: string | null
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_requests_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loans: {
+        Row: {
+          amount: number
+          borrower_id: string
+          created_at: string
+          duration: number
+          id: string
+          interest_rate: number
+          lender_id: string
+          listing_id: string
+          monthly_payment: number
+          next_payment_date: string | null
+          payments_left: number
+          payments_made: number
+          purpose: string | null
+          remaining_balance: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          borrower_id: string
+          created_at?: string
+          duration: number
+          id?: string
+          interest_rate: number
+          lender_id: string
+          listing_id: string
+          monthly_payment: number
+          next_payment_date?: string | null
+          payments_left: number
+          payments_made?: number
+          purpose?: string | null
+          remaining_balance: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          borrower_id?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          interest_rate?: number
+          lender_id?: string
+          listing_id?: string
+          monthly_payment?: number
+          next_payment_date?: string | null
+          payments_left?: number
+          payments_made?: number
+          purpose?: string | null
+          remaining_balance?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_balance: number | null

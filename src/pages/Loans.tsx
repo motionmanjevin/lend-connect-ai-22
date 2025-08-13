@@ -97,17 +97,47 @@ const pastLoans = [
 
 export default function Loans() {
   const [activeTab, setActiveTab] = useState("borrowing");
-  const [loans, setLoans] = useState(borrowingLoans);
+  const [borrowingLoans, setBorrowingLoans] = useState<any[]>([]);
+  const [lendingLoans, setLendingLoans] = useState<any[]>([]);
+  const [pastLoans, setPastLoans] = useState<any[]>([]);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
-  const [pendingPayment, setPendingPayment] = useState<{ loanId: number; amount: number } | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<{ loanId: string; amount: number } | null>(null);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  // Reset scroll position on page load
+  // Reset scroll position on page load and load real data
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    
+    const loadLoans = async () => {
+      if (!user) return;
+      
+      try {
+        // Load borrowing loans
+        const { data: borrowData } = await supabase
+          .from('loans')
+          .select('*')
+          .eq('borrower_id', user.id);
 
-  const handlePayNow = (loanId: number, installmentAmount: number) => {
+        // Load lending loans
+        const { data: lendData } = await supabase
+          .from('loans')
+          .select('*')
+          .eq('lender_id', user.id);
+
+        setBorrowingLoans(borrowData || []);
+        setLendingLoans(lendData || []);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading loans:', error);
+        setLoading(false);
+      }
+    };
+
+    loadLoans();
+  }, [user]);
+
+  const handlePayNow = (loanId: string, installmentAmount: number) => {
     setPendingPayment({ loanId, amount: installmentAmount });
     setIsVerificationOpen(true);
   };
@@ -118,26 +148,45 @@ export default function Loans() {
     const { loanId, amount } = pendingPayment;
     
     try {
-      // Update the loan state
-      setLoans(prevLoans => 
-        prevLoans.map(loan => {
-          if (loan.id === loanId) {
-            const newPaymentsMade = loan.paymentsMade + 1;
-            const newPaymentsLeft = loan.paymentsLeft - 1;
-            const newRemainingBalance = loan.remainingBalance - amount;
-            
+      // Update the loan in database
+      const loan = borrowingLoans.find(l => l.id === loanId);
+      if (!loan) return;
+
+      const newPaymentsMade = loan.payments_made + 1;
+      const newPaymentsLeft = loan.payments_left - 1;
+      const newRemainingBalance = parseFloat(loan.remaining_balance) - amount;
+
+      const { error: loanError } = await supabase
+        .from('loans')
+        .update({
+          payments_made: newPaymentsMade,
+          payments_left: Math.max(0, newPaymentsLeft),
+          remaining_balance: Math.max(0, newRemainingBalance),
+          status: newPaymentsLeft <= 0 ? "completed" : "active",
+          next_payment_date: newPaymentsLeft > 0 ? 
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : 
+            null
+        })
+        .eq('id', loanId);
+
+      if (loanError) throw loanError;
+
+      // Update local state
+      setBorrowingLoans(prevLoans => 
+        prevLoans.map(l => {
+          if (l.id === loanId) {
             return {
-              ...loan,
-              paymentsMade: newPaymentsMade,
-              paymentsLeft: Math.max(0, newPaymentsLeft),
-              remainingBalance: Math.max(0, newRemainingBalance),
+              ...l,
+              payments_made: newPaymentsMade,
+              payments_left: Math.max(0, newPaymentsLeft),
+              remaining_balance: Math.max(0, newRemainingBalance),
               status: newPaymentsLeft <= 0 ? "completed" : "active",
-              nextPayment: newPaymentsLeft > 0 ? 
+              next_payment_date: newPaymentsLeft > 0 ? 
                 new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : 
                 null
             };
           }
-          return loan;
+          return l;
         })
       );
 
@@ -211,7 +260,7 @@ export default function Loans() {
           </Card>
           <Card className="card-elevated p-4 text-center">
             <Clock className="w-6 h-6 text-primary mx-auto mb-2" />
-            <p className="text-lg font-bold">GHC {loans.reduce((total, loan) => total + loan.remainingBalance, 0).toLocaleString()}</p>
+            <p className="text-lg font-bold">GHC {borrowingLoans.reduce((total, loan) => total + parseFloat(loan.remaining_balance || '0'), 0).toLocaleString()}</p>
             <p className="text-muted-foreground text-xs">Balance Owed</p>
           </Card>
         </div>
@@ -227,146 +276,184 @@ export default function Loans() {
 
         {/* Borrowing Tab */}
         <TabsContent value="borrowing" className="space-y-4 mt-4">
-          {loans.map((loan) => (
-            <Card key={loan.id} className="card-elevated p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold">GHC {loan.amount.toLocaleString()}</h3>
-                  <p className="text-muted-foreground text-sm">{loan.purpose}</p>
-                  <p className="text-muted-foreground text-xs">from {loan.lender}</p>
-                </div>
-                <Badge className={`${getStatusColor(loan.status)} rounded-full`}>
-                  {loan.status}
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                {/* Payment Info */}
-                <div className="grid grid-cols-2 gap-4">
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading loans...</p>
+            </div>
+          ) : borrowingLoans.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No borrowing loans found.</p>
+            </div>
+          ) : (
+            borrowingLoans.map((loan) => (
+              <Card key={loan.id} className="card-elevated p-4">
+                <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                    <p className="font-bold">GHC {loan.monthlyPayment}</p>
+                    <h3 className="font-semibold">GHC {parseFloat(loan.amount).toLocaleString()}</h3>
+                    <p className="text-muted-foreground text-sm">{loan.purpose}</p>
+                    <p className="text-muted-foreground text-xs">Loan ID: {loan.id.substring(0, 8)}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Remaining</p>
-                    <p className="font-bold">GHC {loan.remainingBalance.toLocaleString()}</p>
-                  </div>
+                  <Badge className={`${getStatusColor(loan.status)} rounded-full`}>
+                    {loan.status}
+                  </Badge>
                 </div>
 
-                {loan.status === "active" && loan.nextPayment && (
-                  <>
-                    {/* Next Payment */}
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="w-4 h-4 text-accent" />
-                        <span className="text-sm font-medium">Next Payment Due</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{loan.nextPayment}</p>
-                      <p className="text-lg font-bold text-accent">GHC {loan.monthlyPayment}</p>
-                    </div>
-
-                    {/* Progress */}
+                <div className="space-y-3">
+                  {/* Payment Info */}
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="text-muted-foreground">{loan.paymentsLeft} payments left</span>
-                      </div>
-                      <Progress 
-                        value={((loan.paymentsMade) / loan.term) * 100} 
-                        className="w-full h-3"
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>{loan.paymentsMade} paid</span>
-                        <span>{Math.round(((loan.paymentsMade) / loan.term) * 100)}% complete</span>
-                      </div>
+                      <p className="text-sm text-muted-foreground">Monthly Payment</p>
+                      <p className="font-bold">GHC {parseFloat(loan.monthly_payment).toLocaleString()}</p>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <Button 
-                        className="btn-hero flex-1"
-                        onClick={() => handlePayNow(loan.id, loan.installmentAmount)}
-                      >
-                        <DollarSign className="w-4 h-4 mr-1" />
-                        Pay Now (GHC {loan.installmentAmount})
-                      </Button>
-                      <Button variant="outline" size="sm" className="sm:w-auto w-full">
-                        Request Extension
-                      </Button>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Remaining</p>
+                      <p className="font-bold">GHC {parseFloat(loan.remaining_balance).toLocaleString()}</p>
                     </div>
-                  </>
-                )}
-
-                {loan.status === "completed" && (
-                  <div className="bg-success/10 rounded-lg p-3 text-center">
-                    <CheckCircle className="w-6 h-6 text-success mx-auto mb-2" />
-                    <p className="text-sm font-medium text-success">Loan Completed</p>
-                    <p className="text-xs text-muted-foreground">All payments made successfully</p>
                   </div>
-                )}
-              </div>
-            </Card>
-          ))}
+
+                  {loan.status === "active" && loan.next_payment_date && (
+                    <>
+                      {/* Next Payment */}
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Calendar className="w-4 h-4 text-accent" />
+                          <span className="text-sm font-medium">Next Payment Due</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{loan.next_payment_date}</p>
+                        <p className="text-lg font-bold text-accent">GHC {parseFloat(loan.monthly_payment).toLocaleString()}</p>
+                      </div>
+
+                      {/* Progress */}
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span className="text-muted-foreground">{loan.payments_left} payments left</span>
+                        </div>
+                        <Progress 
+                          value={((loan.payments_made) / loan.duration) * 100} 
+                          className="w-full h-3"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <span>{loan.payments_made} paid</span>
+                          <span>{Math.round(((loan.payments_made) / loan.duration) * 100)}% complete</span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button 
+                          className="btn-hero flex-1"
+                          onClick={() => handlePayNow(loan.id, parseFloat(loan.monthly_payment))}
+                        >
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          Pay Now (GHC {parseFloat(loan.monthly_payment).toLocaleString()})
+                        </Button>
+                        <Button variant="outline" size="sm" className="sm:w-auto w-full">
+                          Request Extension
+                        </Button>
+                      </div>
+                    </>
+                  )}
+
+                  {loan.status === "completed" && (
+                    <div className="bg-success/10 rounded-lg p-3 text-center">
+                      <CheckCircle className="w-6 h-6 text-success mx-auto mb-2" />
+                      <p className="text-sm font-medium text-success">Loan Completed</p>
+                      <p className="text-xs text-muted-foreground">All payments made successfully</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))
+          )}
         </TabsContent>
 
         {/* Lending Tab */}
         <TabsContent value="lending" className="space-y-4 mt-4">
-          {lendingLoans.map((loan) => (
-            <Card key={loan.id} className="card-elevated p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold">GHC {loan.amount.toLocaleString()}</h3>
-                  <p className="text-muted-foreground text-sm">to {loan.borrower}</p>
-                  <p className="text-muted-foreground text-xs">{loan.purpose}</p>
-                </div>
-                <Badge className={`${getStatusColor(loan.status)} rounded-full`}>
-                  {loan.status}
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                {/* Return Info */}
-                <div className="grid grid-cols-2 gap-4">
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading loans...</p>
+            </div>
+          ) : lendingLoans.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No lending loans found.</p>
+            </div>
+          ) : (
+            lendingLoans.map((loan) => (
+              <Card key={loan.id} className="card-elevated p-4">
+                <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="text-sm text-muted-foreground">Monthly Return</p>
-                    <p className="font-bold text-success">
-                      {loan.status === "active" ? `GHC ${loan.monthlyReturn}` : "Completed"}
-                    </p>
+                    <h3 className="font-semibold">GHC {parseFloat(loan.amount).toLocaleString()}</h3>
+                    <p className="text-muted-foreground text-sm">Loan ID: {loan.id.substring(0, 8)}</p>
+                    <p className="text-muted-foreground text-xs">{loan.purpose}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Earned</p>
-                    <p className="font-bold text-success">GHC {loan.totalEarned}</p>
-                  </div>
+                  <Badge className={`${getStatusColor(loan.status)} rounded-full`}>
+                    {loan.status}
+                  </Badge>
                 </div>
 
-                {/* ROI Display */}
-                <div className="bg-success/10 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="w-4 h-4 text-success" />
-                    <span className="text-sm font-medium text-success">ROI Performance</span>
+                <div className="space-y-3">
+                  {/* Return Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Monthly Return</p>
+                      <p className="font-bold text-success">
+                        {loan.status === "active" ? `GHC ${parseFloat(loan.monthly_payment).toLocaleString()}` : "Completed"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Amount Lent</p>
+                      <p className="font-bold text-success">GHC {parseFloat(loan.amount).toLocaleString()}</p>
+                    </div>
                   </div>
-                  <p className="text-lg font-bold text-success">{loan.rate}% APR</p>
+
+                  {/* ROI Display */}
+                  <div className="bg-success/10 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="w-4 h-4 text-success" />
+                      <span className="text-sm font-medium text-success">ROI Performance</span>
+                    </div>
+                    <p className="text-lg font-bold text-success">{parseFloat(loan.interest_rate)}% APR</p>
+                    {loan.status === "active" && loan.next_payment_date && (
+                      <p className="text-sm text-muted-foreground">
+                        Next payment: {loan.next_payment_date}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Progress */}
                   {loan.status === "active" && (
-                    <p className="text-sm text-muted-foreground">
-                      Next payment: {loan.nextReturn}
-                    </p>
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-muted-foreground">Repayment Progress</span>
+                        <span className="text-muted-foreground">{loan.payments_left} payments left</span>
+                      </div>
+                      <Progress 
+                        value={((loan.payments_made) / loan.duration) * 100} 
+                        className="w-full h-3"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                        <span>{loan.payments_made} received</span>
+                        <span>{Math.round(((loan.payments_made) / loan.duration) * 100)}% complete</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  {loan.status === "active" && (
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1">
+                        Early Exit
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Contact Borrower
+                      </Button>
+                    </div>
                   )}
                 </div>
-
-                {/* Actions */}
-                {loan.status === "active" && (
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1">
-                      Early Exit
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Withdraw Returns
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          )}
         </TabsContent>
 
         {/* History Tab */}
