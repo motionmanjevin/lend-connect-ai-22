@@ -186,7 +186,7 @@ export default function Marketplace() {
           .from('listings')
           .select(`
             *,
-            profiles!listings_user_id_fkey(full_name, email)
+            profiles(full_name, email)
           `)
           .eq('listing_type', 'borrow')
           .eq('status', 'active');
@@ -196,7 +196,7 @@ export default function Marketplace() {
           .from('listings')
           .select(`
             *,
-            profiles!listings_user_id_fkey(full_name, email)
+            profiles(full_name, email)
           `)
           .eq('listing_type', 'lend')
           .eq('status', 'active');
@@ -208,8 +208,8 @@ export default function Marketplace() {
             .from('loan_requests')
             .select(`
               *,
-              listings!loan_requests_listing_id_fkey(*),
-              profiles!loan_requests_requester_id_fkey(full_name, email)
+              listings(*),
+              profiles(full_name, email)
             `)
             .eq('listing_owner_id', user.id)
             .eq('status', 'pending');
