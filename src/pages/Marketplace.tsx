@@ -55,13 +55,10 @@ export default function Marketplace() {
       try {
         console.log('Loading listings...');
         
-        // Load borrow listings
+        // Load borrow listings without profiles join for now
         const { data: borrowData, error: borrowError } = await supabase
           .from('listings')
-          .select(`
-            *,
-            profiles!listings_user_id_fkey(full_name, email)
-          `)
+          .select('*')
           .eq('listing_type', 'borrow')
           .eq('status', 'active');
 
@@ -71,13 +68,10 @@ export default function Marketplace() {
           console.log('Borrow listings loaded:', borrowData);
         }
 
-        // Load lend listings
+        // Load lend listings without profiles join for now
         const { data: lendData, error: lendError } = await supabase
           .from('listings')
-          .select(`
-            *,
-            profiles!listings_user_id_fkey(full_name, email)
-          `)
+          .select('*')
           .eq('listing_type', 'lend')
           .eq('status', 'active');
 
@@ -92,11 +86,7 @@ export default function Marketplace() {
         if (user) {
           const { data, error: requestsError } = await supabase
             .from('loan_requests')
-            .select(`
-              *,
-              listings!loan_requests_listing_id_fkey(*),
-              profiles!loan_requests_requester_id_fkey(full_name, email)
-            `)
+            .select('*')
             .eq('listing_owner_id', user.id)
             .eq('status', 'pending');
           
@@ -431,7 +421,7 @@ export default function Marketplace() {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{listing.profiles?.full_name || 'Anonymous'}</h3>
+                        <h3 className="font-semibold">User</h3>
                         <Shield className="w-4 h-4 text-success" />
                       </div>
                       <p className="text-muted-foreground text-sm">{listing.purpose || 'General loan'}</p>
@@ -501,7 +491,7 @@ export default function Marketplace() {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{listing.profiles?.full_name || 'Anonymous'}</h3>
+                        <h3 className="font-semibold">User</h3>
                         <Shield className="w-4 h-4 text-success" />
                       </div>
                       <p className="text-muted-foreground text-sm">Lending Offer</p>
@@ -576,7 +566,7 @@ export default function Marketplace() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{request.profiles?.full_name || 'Anonymous'}</h3>
+                          <h3 className="font-semibold">User</h3>
                           <Shield className="w-4 h-4 text-success" />
                         </div>
                         <p className="text-muted-foreground text-sm">{request.listings?.purpose || 'General loan'}</p>
