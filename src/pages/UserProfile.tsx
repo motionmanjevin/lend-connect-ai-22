@@ -3,46 +3,99 @@ import { ArrowLeft, Shield, Star, MapPin, Calendar, Phone, Mail, MessageCircle, 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-// Mock data - in real app this would come from props or API
-const userData = {
-  id: "1",
-  name: "Sarah Martinez",
-  avatar: "SM",
-  role: "Borrower", // or "Lender" or "Both"
-  tagline: "Trusted Borrower Since 2024",
-  tier: "Gold",
-  location: "Accra, Ghana",
-  isOnline: true,
-  verified: true,
-  phone: "+233 24 123 4567",
-  email: "sarah.martinez@email.com",
-  memberSince: "2024",
-  stats: {
-    loansGiven: 0,
-    loansReceived: 4,
-    totalAmountLent: 0,
-    totalAmountBorrowed: 18500,
-    averageInterestOffered: 0,
-    averageInterestAccepted: 8.2
-  },
-  currentListings: [
-    {
-      id: 1,
-      type: "borrow",
-      amount: 5000,
-      rate: 8.5,
-      duration: 24,
-      purpose: "Home Renovation"
-    }
-  ],
-  verifiedDocuments: ["ID", "Income Proof", "Address"],
-  riskWarning: null // or "This user has a history of late payments"
-};
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function UserProfile() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!userId) return;
+      
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user profile:', error);
+        } else {
+          // Get user's listings
+          const { data: listings } = await supabase
+            .from('listings')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'active');
+
+          // Get user's loan stats
+          const { data: loansAsLender } = await supabase
+            .from('loans')
+            .select('amount')
+            .eq('lender_id', userId);
+
+          const { data: loansAsBorrower } = await supabase
+            .from('loans')
+            .select('amount')
+            .eq('borrower_id', userId);
+
+          const totalAmountLent = loansAsLender?.reduce((sum, loan) => sum + parseFloat(loan.amount.toString()), 0) || 0;
+          const totalAmountBorrowed = loansAsBorrower?.reduce((sum, loan) => sum + parseFloat(loan.amount.toString()), 0) || 0;
+
+          setUserData({
+            ...profile,
+            name: profile.full_name,
+            currentListings: listings?.map(listing => ({
+              id: listing.id,
+              type: listing.listing_type,
+              amount: parseFloat(listing.amount.toString()),
+              rate: parseFloat(listing.interest_rate.toString()),
+              duration: listing.duration,
+              purpose: listing.purpose
+            })) || [],
+            stats: {
+              loansGiven: loansAsLender?.length || 0,
+              loansReceived: loansAsBorrower?.length || 0,
+              totalAmountLent,
+              totalAmountBorrowed,
+              averageInterestOffered: 0,
+              averageInterestAccepted: 0
+            },
+            verified: true,
+            memberSince: new Date(profile.created_at).getFullYear(),
+            verifiedDocuments: ["ID", "Phone", "Email"]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">User not found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,35 +128,20 @@ export default function UserProfile() {
           <div className="flex-1">
             <div className="flex items-center justify-center gap-2 mb-1">
               <h1 className="font-heading font-bold text-xl text-black">{userData.name}</h1>
-              <Badge className={`${
-                userData.tier === "Gold" ? "bg-secondary" : 
-                userData.tier === "Silver" ? "bg-muted" : "bg-accent"
-              } text-white`}>
-                {userData.tier}
+              <Badge className="bg-secondary text-white">
+                Member
               </Badge>
             </div>
-            <p className="text-black/80 text-sm mb-1">{userData.tagline}</p>
+            <p className="text-black/80 text-sm mb-1">Member since {userData.memberSince}</p>
             
-            {/* Location and Status */}
-            <div className="flex items-center justify-center gap-3 text-black/70 text-sm">
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                <span>{userData.location}</span>
-              </div>
-              {userData.isOnline && (
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-success rounded-full"></div>
-                  <span>Online now</span>
-                </div>
-              )}
-            </div>
-
             {/* Contact Info */}
             <div className="mt-3 space-y-1">
-              <div className="flex items-center justify-center gap-2 text-black/80 text-sm">
-                <Phone className="w-4 h-4" />
-                <span>{userData.phone}</span>
-              </div>
+              {userData.phone_number && (
+                <div className="flex items-center justify-center gap-2 text-black/80 text-sm">
+                  <Phone className="w-4 h-4" />
+                  <span>{userData.phone_number}</span>
+                </div>
+              )}
               <div className="flex items-center justify-center gap-2 text-black/80 text-sm">
                 <Mail className="w-4 h-4" />
                 <span>{userData.email}</span>
@@ -119,12 +157,12 @@ export default function UserProfile() {
           <h3 className="font-heading font-semibold mb-3">Quick Stats</h3>
           <div className="grid grid-cols-2 gap-4 text-center">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Role</p>
-              <Badge variant="outline">{userData.role}</Badge>
-            </div>
-            <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Member Since</p>
               <p className="font-semibold">{userData.memberSince}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Balance</p>
+              <p className="font-semibold">GHC {parseFloat(userData.account_balance || 0).toLocaleString()}</p>
             </div>
             {userData.stats.loansGiven > 0 && (
               <div className="space-y-1">

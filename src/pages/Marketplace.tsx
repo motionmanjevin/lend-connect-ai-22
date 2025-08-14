@@ -50,64 +50,85 @@ export default function Marketplace() {
     window.scrollTo(0, 0);
   }, []);
 
-  useEffect(() => {
-    const loadListings = async () => {
+  const loadListings = async () => {
       try {
         console.log('Loading listings...');
         
-        // Load borrow listings without profiles join for now
+        // Load borrow listings with profile names
         const { data: borrowData, error: borrowError } = await supabase
           .from('listings')
-          .select('*')
+          .select(`
+            *,
+            profiles:user_id (
+              full_name,
+              email
+            )
+          `)
           .eq('listing_type', 'borrow')
           .eq('status', 'active');
 
         if (borrowError) {
           console.error('Error loading borrow listings:', borrowError);
         } else {
+          setBorrowListings(borrowData || []);
           console.log('Borrow listings loaded:', borrowData);
         }
 
-        // Load lend listings without profiles join for now
+        // Load lend listings with profile names
         const { data: lendData, error: lendError } = await supabase
           .from('listings')
-          .select('*')
+          .select(`
+            *,
+            profiles:user_id (
+              full_name,
+              email
+            )
+          `)
           .eq('listing_type', 'lend')
           .eq('status', 'active');
 
         if (lendError) {
           console.error('Error loading lend listings:', lendError);
         } else {
+          setLendListings(lendData || []);
           console.log('Lend listings loaded:', lendData);
         }
 
-        // Load incoming requests if user is logged in
-        let requestsData = [];
+        // Load incoming requests for current user with requester profiles
         if (user) {
           const { data, error: requestsError } = await supabase
             .from('loan_requests')
-            .select('*')
+            .select(`
+              *,
+              requester_profile:requester_id (
+                full_name,
+                email
+              ),
+              listing:listing_id (
+                purpose,
+                amount,
+                interest_rate,
+                duration
+              )
+            `)
             .eq('listing_owner_id', user.id)
             .eq('status', 'pending');
           
           if (requestsError) {
             console.error('Error loading requests:', requestsError);
           } else {
+            setIncomingRequestsData(data || []);
             console.log('Incoming requests loaded:', data);
-            requestsData = data || [];
           }
         }
-
-        setBorrowListings(borrowData || []);
-        setLendListings(lendData || []);
-        setIncomingRequestsData(requestsData);
-        setLoading(false);
       } catch (error) {
         console.error('Error loading listings:', error);
+      } finally {
         setLoading(false);
       }
-    };
+  };
 
+  useEffect(() => {
     loadListings();
   }, [user]);
 
@@ -201,20 +222,45 @@ export default function Marketplace() {
       const monthlyPayment = (principal * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
                             (Math.pow(1 + monthlyRate, numPayments) - 1);
 
+      // Determine borrower and lender based on request context
+      // If someone made an offer to a borrower request, the requester becomes the lender
+      // If someone requested from a lender offer, the requester becomes the borrower
+      
+      // Get original listing to determine the loan roles
+      const { data: originalListing } = await supabase
+        .from('listings')
+        .select('listing_type')
+        .eq('id', request.listing_id)
+        .single();
+
+      let borrower_id, lender_id;
+      
+      if (originalListing?.listing_type === 'borrow') {
+        // Original listing was a borrow request
+        // The listing owner is the borrower, requester is the lender
+        borrower_id = request.listing_owner_id;
+        lender_id = request.requester_id;
+      } else {
+        // Original listing was a lend offer
+        // The listing owner is the lender, requester is the borrower
+        borrower_id = request.requester_id;
+        lender_id = request.listing_owner_id;
+      }
+
       // Create loan
       const { error: loanError } = await supabase
         .from('loans')
         .insert({
           listing_id: request.listing_id,
-          borrower_id: request.requester_id,
-          lender_id: user.id,
+          borrower_id: borrower_id,
+          lender_id: lender_id,
           amount: principal,
           interest_rate: parseFloat(request.interest_rate),
           duration: numPayments,
           monthly_payment: monthlyPayment,
           remaining_balance: principal,
           payments_left: numPayments,
-          purpose: request.listings?.purpose || 'General loan',
+          purpose: request.listing?.purpose || 'General loan',
           next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         });
 
@@ -240,13 +286,13 @@ export default function Marketplace() {
       const { data: lenderProfile } = await supabase
         .from('profiles')
         .select('account_balance')
-        .eq('user_id', user.id)
+        .eq('user_id', lender_id)
         .single();
 
       const { data: borrowerProfile } = await supabase
         .from('profiles')
         .select('account_balance')
-        .eq('user_id', request.requester_id)
+        .eq('user_id', borrower_id)
         .single();
 
       if (lenderProfile && borrowerProfile) {
@@ -258,25 +304,25 @@ export default function Marketplace() {
           await supabase
             .from('profiles')
             .update({ account_balance: lenderBalance - principal })
-            .eq('user_id', user.id);
+            .eq('user_id', lender_id);
 
           await supabase
             .from('profiles')
             .update({ account_balance: borrowerBalance + principal })
-            .eq('user_id', request.requester_id);
+            .eq('user_id', borrower_id);
 
           // Create transaction records
           await supabase
             .from('transactions')
             .insert([
               {
-                user_id: user.id,
+                user_id: lender_id,
                 amount: -principal,
                 transaction_type: 'loan_disbursement',
                 status: 'completed'
               },
               {
-                user_id: request.requester_id,
+                user_id: borrower_id,
                 amount: principal,
                 transaction_type: 'loan_received',
                 status: 'completed'
@@ -289,10 +335,11 @@ export default function Marketplace() {
       toast.success("Request accepted and loan created successfully!");
       
       // Refresh data
-      window.location.reload();
+      loadListings();
     } catch (error) {
       console.error('Error accepting request:', error);
-      toast.error("Failed to accept request. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : 'Please try again.';
+      toast.error(`Failed to accept request: ${errorMessage}`);
     }
   };
 
@@ -421,7 +468,7 @@ export default function Marketplace() {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">User</h3>
+                        <h3 className="font-semibold">{listing.profiles?.full_name || 'User'}</h3>
                         <Shield className="w-4 h-4 text-success" />
                       </div>
                       <p className="text-muted-foreground text-sm">{listing.purpose || 'General loan'}</p>
@@ -491,7 +538,7 @@ export default function Marketplace() {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">User</h3>
+                        <h3 className="font-semibold">{listing.profiles?.full_name || 'User'}</h3>
                         <Shield className="w-4 h-4 text-success" />
                       </div>
                       <p className="text-muted-foreground text-sm">Lending Offer</p>
@@ -566,10 +613,10 @@ export default function Marketplace() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">User</h3>
+                          <h3 className="font-semibold">{request.requester_profile?.full_name || 'User'}</h3>
                           <Shield className="w-4 h-4 text-success" />
                         </div>
-                        <p className="text-muted-foreground text-sm">{request.listings?.purpose || 'General loan'}</p>
+                        <p className="text-muted-foreground text-sm">{request.listing?.purpose || 'General loan'}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground">
@@ -580,18 +627,18 @@ export default function Marketplace() {
 
                     {/* For Listing Badge */}
                     <Badge variant="outline" className="mb-3">
-                      For: {request.listings?.purpose || 'Your listing'}
+                      For: {request.listing?.purpose || 'Your listing'}
                     </Badge>
 
                     {/* Request Details */}
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
-                        <p className="text-2xl font-bold">GHC {parseFloat(request.amount || request.listings?.amount || 0).toLocaleString()}</p>
+                        <p className="text-2xl font-bold">GHC {parseFloat(request.amount || request.listing?.amount || 0).toLocaleString()}</p>
                         <p className="text-muted-foreground text-sm">Requested Amount</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-bold text-primary">{parseFloat(request.interest_rate || request.listings?.interest_rate || 0)}%</p>
-                        <p className="text-muted-foreground text-sm">{request.duration || request.listings?.duration || 0} months</p>
+                        <p className="text-xl font-bold text-primary">{parseFloat(request.interest_rate || request.listing?.interest_rate || 0)}%</p>
+                        <p className="text-muted-foreground text-sm">{request.duration || request.listing?.duration || 0} months</p>
                       </div>
                     </div>
 
