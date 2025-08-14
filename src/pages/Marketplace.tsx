@@ -54,71 +54,104 @@ export default function Marketplace() {
       try {
         console.log('Loading listings...');
         
-        // Load borrow listings with profile names
+        // Load borrow listings
         const { data: borrowData, error: borrowError } = await supabase
           .from('listings')
-          .select(`
-            *,
-            profiles:user_id (
-              full_name,
-              email
-            )
-          `)
+          .select('*')
           .eq('listing_type', 'borrow')
           .eq('status', 'active');
 
         if (borrowError) {
           console.error('Error loading borrow listings:', borrowError);
+          setBorrowListings([]);
         } else {
-          setBorrowListings(borrowData || []);
-          console.log('Borrow listings loaded:', borrowData);
+          // Fetch profile data separately for each listing
+          const borrowWithProfiles = await Promise.all(
+            (borrowData || []).map(async (listing) => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, email')
+                .eq('user_id', listing.user_id)
+                .single();
+              
+              return {
+                ...listing,
+                profiles: profile
+              };
+            })
+          );
+          setBorrowListings(borrowWithProfiles);
+          console.log('Borrow listings loaded:', borrowWithProfiles);
         }
 
-        // Load lend listings with profile names
+        // Load lend listings
         const { data: lendData, error: lendError } = await supabase
           .from('listings')
-          .select(`
-            *,
-            profiles:user_id (
-              full_name,
-              email
-            )
-          `)
+          .select('*')
           .eq('listing_type', 'lend')
           .eq('status', 'active');
 
         if (lendError) {
           console.error('Error loading lend listings:', lendError);
+          setLendListings([]);
         } else {
-          setLendListings(lendData || []);
-          console.log('Lend listings loaded:', lendData);
+          // Fetch profile data separately for each listing
+          const lendWithProfiles = await Promise.all(
+            (lendData || []).map(async (listing) => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, email')
+                .eq('user_id', listing.user_id)
+                .single();
+              
+              return {
+                ...listing,
+                profiles: profile
+              };
+            })
+          );
+          setLendListings(lendWithProfiles);
+          console.log('Lend listings loaded:', lendWithProfiles);
         }
 
-        // Load incoming requests for current user with requester profiles
+        // Load incoming requests for current user
         if (user) {
-          const { data, error: requestsError } = await supabase
+          const { data: requestsData, error: requestsError } = await supabase
             .from('loan_requests')
-            .select(`
-              *,
-              requester_profile:requester_id (
-                full_name,
-                email
-              ),
-              listing:listing_id (
-                purpose,
-                amount,
-                interest_rate,
-                duration
-              )
-            `)
+            .select('*')
             .eq('listing_owner_id', user.id)
             .eq('status', 'pending');
           
           if (requestsError) {
             console.error('Error loading requests:', requestsError);
+            setIncomingRequestsData([]);
           } else {
-            setIncomingRequestsData(data || []);
-            console.log('Incoming requests loaded:', data);
+            // Fetch additional data for each request
+            const requestsWithDetails = await Promise.all(
+              (requestsData || []).map(async (request) => {
+                // Get requester profile
+                const { data: requesterProfile } = await supabase
+                  .from('profiles')
+                  .select('full_name, email')
+                  .eq('user_id', request.requester_id)
+                  .single();
+                
+                // Get listing details
+                const { data: listing } = await supabase
+                  .from('listings')
+                  .select('purpose, amount, interest_rate, duration')
+                  .eq('id', request.listing_id)
+                  .single();
+                
+                return {
+                  ...request,
+                  requester_profile: requesterProfile,
+                  listing: listing
+                };
+              })
+            );
+            setIncomingRequestsData(requestsWithDetails);
+            console.log('Incoming requests loaded:', requestsWithDetails);
           }
         }
       } catch (error) {
