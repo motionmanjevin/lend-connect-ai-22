@@ -10,134 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-const borrowRequests = [
-  {
-    id: 1,
-    borrower: "Sarah Martinez",
-    avatar: "SM",
-    amount: 5000,
-    maxRate: 8.5,
-    term: 24,
-    purpose: "Home Renovation",
-    story: "Looking to renovate my kitchen and add value to my home.",
-    location: "Accra, Ghana",
-    verified: true,
-    postedDays: 2
-  },
-  {
-    id: 2,
-    borrower: "Tech Startup Inc.",
-    avatar: "TS",
-    amount: 15000,
-    maxRate: 12.0,
-    term: 36,
-    purpose: "Business Expansion",
-    story: "Expanding our SaaS platform to serve more customers.",
-    location: "Kumasi, Ghana",
-    verified: true,
-    postedDays: 5
-  },
-  {
-    id: 3,
-    borrower: "Mike Johnson",
-    avatar: "MJ",
-    amount: 3500,
-    maxRate: 7.2,
-    term: 18,
-    purpose: "Education",
-    story: "Completing my certification in data science.",
-    location: "Takoradi, Ghana",
-    verified: false,
-    postedDays: 1
-  }
-];
-
-const lendOffers = [
-  {
-    id: 1,
-    lender: "Investment Group A",
-    avatar: "IG",
-    maxAmount: 50000,
-    minRate: 9.0,
-    maxTerm: 60,
-    criteria: "Business loans, verified income required",
-    story: "We specialize in funding growing businesses with strong fundamentals.",
-    location: "Accra, Ghana",
-    verified: true,
-    postedDays: 3
-  },
-  {
-    id: 2,
-    lender: "Community Fund",
-    avatar: "CF",
-    maxAmount: 10000,
-    minRate: 6.5,
-    maxTerm: 24,
-    criteria: "Education and personal development",
-    story: "Supporting individuals in their educational journey and skill development.",
-    location: "Tema, Ghana",
-    verified: true,
-    postedDays: 1
-  },
-  {
-    id: 3,
-    lender: "Sarah Williams",
-    avatar: "SW",
-    maxAmount: 25000,
-    minRate: 8.0,
-    maxTerm: 36,
-    criteria: "Home improvements and small businesses",
-    story: "Helping families improve their homes and entrepreneurs start their businesses.",
-    location: "Cape Coast, Ghana",
-    verified: true,
-    postedDays: 4
-  }
-];
-
-const incomingRequests = [
-  {
-    id: 1,
-    requester: "John Doe",
-    avatar: "JD",
-    amount: 8000,
-    rate: 9.5,
-    term: 24,
-    purpose: "Business Equipment",
-    message: "I'd like to request funding for new equipment for my restaurant.",
-    location: "Accra, Ghana",
-    verified: true,
-    requestedDays: 1,
-    myListingTitle: "Business loans, verified income required"
-  },
-  {
-    id: 2,
-    requester: "Mary Johnson",
-    avatar: "MJ",
-    amount: 3500,
-    rate: 7.0,
-    term: 18,
-    purpose: "Education",
-    message: "Requesting funds to complete my master's degree program.",
-    location: "Kumasi, Ghana",
-    verified: true,
-    requestedDays: 2,
-    myListingTitle: "Education and personal development"
-  },
-  {
-    id: 3,
-    requester: "Tech Solutions Ltd",
-    avatar: "TS",
-    amount: 12000,
-    rate: 10.5,
-    term: 36,
-    purpose: "Business Expansion",
-    message: "Looking for funding to expand our software development team.",
-    location: "Tema, Ghana",
-    verified: false,
-    requestedDays: 3,
-    myListingTitle: "Business loans, verified income required"
-  }
-];
+// No hardcoded data - everything comes from the database now
 
 const filterOptions = [
   { label: "All Amounts", value: "all" },
@@ -169,7 +42,7 @@ export default function Marketplace() {
   // Real data from database
   const [borrowListings, setBorrowListings] = useState<any[]>([]);
   const [lendListings, setLendListings] = useState<any[]>([]);
-  const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
+  const [incomingRequestsData, setIncomingRequestsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Reset scroll position on page load
@@ -177,48 +50,67 @@ export default function Marketplace() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Load data from database
   useEffect(() => {
     const loadListings = async () => {
       try {
+        console.log('Loading listings...');
+        
         // Load borrow listings
-        const { data: borrowData } = await supabase
+        const { data: borrowData, error: borrowError } = await supabase
           .from('listings')
           .select(`
             *,
-            profiles(full_name, email)
+            profiles!listings_user_id_fkey(full_name, email)
           `)
           .eq('listing_type', 'borrow')
           .eq('status', 'active');
 
+        if (borrowError) {
+          console.error('Error loading borrow listings:', borrowError);
+        } else {
+          console.log('Borrow listings loaded:', borrowData);
+        }
+
         // Load lend listings
-        const { data: lendData } = await supabase
+        const { data: lendData, error: lendError } = await supabase
           .from('listings')
           .select(`
             *,
-            profiles(full_name, email)
+            profiles!listings_user_id_fkey(full_name, email)
           `)
           .eq('listing_type', 'lend')
           .eq('status', 'active');
 
+        if (lendError) {
+          console.error('Error loading lend listings:', lendError);
+        } else {
+          console.log('Lend listings loaded:', lendData);
+        }
+
         // Load incoming requests if user is logged in
         let requestsData = [];
         if (user) {
-          const { data } = await supabase
+          const { data, error: requestsError } = await supabase
             .from('loan_requests')
             .select(`
               *,
-              listings(*),
-              profiles(full_name, email)
+              listings!loan_requests_listing_id_fkey(*),
+              profiles!loan_requests_requester_id_fkey(full_name, email)
             `)
             .eq('listing_owner_id', user.id)
             .eq('status', 'pending');
-          requestsData = data || [];
+          
+          if (requestsError) {
+            console.error('Error loading requests:', requestsError);
+          } else {
+            console.log('Incoming requests loaded:', data);
+            requestsData = data || [];
+          }
         }
 
         setBorrowListings(borrowData || []);
         setLendListings(lendData || []);
-        setIncomingRequests(requestsData);
+        setIncomingRequestsData(requestsData);
         setLoading(false);
       } catch (error) {
         console.error('Error loading listings:', error);
@@ -243,6 +135,13 @@ export default function Marketplace() {
     if (!selectedListing || !user) return;
     
     try {
+      // Get listing details
+      const { data: listingData } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', selectedListing.id)
+        .single();
+
       // Create loan request
       const { error } = await supabase
         .from('loan_requests')
@@ -250,9 +149,9 @@ export default function Marketplace() {
           listing_id: selectedListing.id,
           requester_id: user.id,
           listing_owner_id: selectedListing.ownerId,
-          amount: 0, // Will be filled from listing details
-          interest_rate: 0, // Will be filled from listing details
-          duration: 0, // Will be filled from listing details
+          amount: listingData?.amount || 0,
+          interest_rate: listingData?.interest_rate || 0,
+          duration: listingData?.duration || 0,
           message: "I would like to make an offer for your loan request."
         });
 
@@ -270,6 +169,13 @@ export default function Marketplace() {
     if (!selectedListing || !user) return;
     
     try {
+      // Get listing details
+      const { data: listingData } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', selectedListing.id)
+        .single();
+
       // Create loan request
       const { error } = await supabase
         .from('loan_requests')
@@ -277,9 +183,9 @@ export default function Marketplace() {
           listing_id: selectedListing.id,
           requester_id: user.id,
           listing_owner_id: selectedListing.ownerId,
-          amount: 0, // Will be filled from listing details
-          interest_rate: 0, // Will be filled from listing details
-          duration: 0, // Will be filled from listing details
+          amount: listingData?.amount || 0,
+          interest_rate: listingData?.interest_rate || 0,
+          duration: listingData?.duration || 0,
           message: "I would like to request a loan from your offer."
         });
 
@@ -295,7 +201,7 @@ export default function Marketplace() {
 
   const handleAcceptRequest = async (requestId: string) => {
     try {
-      const request = incomingRequests.find(r => r.id === requestId);
+      const request = incomingRequestsData.find(r => r.id === requestId);
       if (!request || !user) return;
 
       // Calculate monthly payment
@@ -657,91 +563,110 @@ export default function Marketplace() {
             </Card>
           ))
         ) : (
-          incomingRequests.map((request) => (
-            <Card key={request.id} className="card-interactive p-4">
-              <div className="w-full">
-                {/* Content */}
+          incomingRequestsData.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No incoming requests at the moment.</p>
+            </div>
+          ) : (
+            incomingRequestsData.map((request) => (
+              <Card key={request.id} className="card-interactive p-4">
                 <div className="w-full">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{request.requester}</h3>
-                        {request.verified && (
+                  {/* Content */}
+                  <div className="w-full">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{request.profiles?.full_name || 'Anonymous'}</h3>
                           <Shield className="w-4 h-4 text-success" />
-                        )}
+                        </div>
+                        <p className="text-muted-foreground text-sm">{request.listings?.purpose || 'General loan'}</p>
                       </div>
-                      <p className="text-muted-foreground text-sm">{request.purpose}</p>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">
+                          {Math.floor((Date.now() - new Date(request.created_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{request.requestedDays} days ago</p>
+
+                    {/* For Listing Badge */}
+                    <Badge variant="outline" className="mb-3">
+                      For: {request.listings?.purpose || 'Your listing'}
+                    </Badge>
+
+                    {/* Request Details */}
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <p className="text-2xl font-bold">GHC {parseFloat(request.amount || request.listings?.amount || 0).toLocaleString()}</p>
+                        <p className="text-muted-foreground text-sm">Requested Amount</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-primary">{parseFloat(request.interest_rate || request.listings?.interest_rate || 0)}%</p>
+                        <p className="text-muted-foreground text-sm">{request.duration || request.listings?.duration || 0} months</p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* For Listing Badge */}
-                  <Badge variant="outline" className="mb-3">
-                    For: {request.myListingTitle}
-                  </Badge>
-
-                  {/* Request Details */}
-                  <div className="grid grid-cols-2 gap-4 mb-3">
-                    <div>
-                      <p className="text-2xl font-bold">GHC {request.amount.toLocaleString()}</p>
-                      <p className="text-muted-foreground text-sm">Requested Amount</p>
+                    {/* Location and Message */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{request.listings?.location || 'Not specified'}</span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-primary">{request.rate}%</p>
-                      <p className="text-muted-foreground text-sm">{request.term} months</p>
-                    </div>
-                  </div>
 
-                  {/* Location and Message */}
-                  <div className="flex items-center gap-1 mb-2">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{request.location}</span>
-                  </div>
+                    <p className="text-sm text-muted-foreground mb-4">{request.message || 'No message provided'}</p>
 
-                  <p className="text-sm text-muted-foreground mb-4">{request.message}</p>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    {acceptedRequests.has(request.id) ? (
-                      <Button className="bg-success text-success-foreground hover:bg-success/90 flex-1" disabled>
-                        <Check className="w-4 h-4 mr-1" />
-                        Accepted - Processing Transfer
-                      </Button>
-                    ) : declinedRequests.has(request.id) ? (
-                      <Button variant="destructive" className="flex-1" disabled>
-                        <X className="w-4 h-4 mr-1" />
-                        Declined
-                      </Button>
-                    ) : (
-                      <>
-                        <Button 
-                          className="btn-hero flex-1"
-                          onClick={() => handleAcceptRequest(request.id)}
-                        >
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      {acceptedRequests.has(request.id) ? (
+                        <Button className="bg-success text-success-foreground hover:bg-success/90 flex-1" disabled>
                           <Check className="w-4 h-4 mr-1" />
-                          Accept
+                          Accepted - Processing Transfer
                         </Button>
-                        <Button 
-                          variant="destructive" 
-                          className="flex-1"
-                          onClick={() => handleDeclineRequest(request.id)}
-                        >
+                      ) : declinedRequests.has(request.id) ? (
+                        <Button variant="destructive" className="flex-1" disabled>
                           <X className="w-4 h-4 mr-1" />
-                          Decline
+                          Declined
                         </Button>
-                      </>
-                    )}
+                      ) : (
+                        <>
+                          <Button 
+                            className="btn-hero flex-1"
+                            onClick={() => handleAcceptRequest(request.id)}
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Accept
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            className="flex-1"
+                            onClick={() => handleDeclineRequest(request.id)}
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Decline
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    
+                    <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => navigate(`/user-profile/${request.requester_id}`)}>
+                      View Profile
+                    </Button>
                   </div>
-                  
-                  <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => navigate(`/user-profile/${request.id}`)}>
-                    View Profile
-                  </Button>
                 </div>
-              </div>
-            </Card>
-          ))
+              </Card>
+            ))
+          )
+        )}
+
+        {/* Empty state for no listings */}
+        {!loading && activeTab === "borrow" && borrowListings.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No borrow requests available at the moment.</p>
+          </div>
+        )}
+        
+        {!loading && activeTab === "lend" && lendListings.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No lending offers available at the moment.</p>
+          </div>
         )}
       </div>
 
